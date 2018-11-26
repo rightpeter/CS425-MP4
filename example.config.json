@@ -1,0 +1,8 @@
+{
+    "ip": "127.0.0.1",
+    "port": 8080,
+    "master_ip": "127.0.0.1",
+    "master_port": 8081,
+    "member_list": ["127.0.0.1"],
+    "sleep_time": 300
+}
