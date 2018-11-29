@@ -2,7 +2,6 @@ package main
 
 import (
 	"CS425/CS425-MP4/bolt"
-	"CS425/CS425-MP4/collector"
 	"CS425/CS425-MP4/index"
 	"CS425/CS425-MP4/model"
 	"CS425/CS425-MP4/spout"
@@ -10,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/satori/go.uuid"
 	"net/rpc"
 	"sync"
 	"time"
@@ -165,6 +163,7 @@ func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 		return errors.New("streamID conflicts")
 	}
 
+	// TODO Get emit rule info froim builder and add to emit ruiles
 	m.streamBuilders[builder.ID] = builder
 
 	for spout := range m.streamBuilders[builder.ID].Spout {
@@ -185,7 +184,7 @@ func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 }
 
 func (m Master) askWorkerPrepareSpout(ip string, spout spout.Spout) {
-	// TODO
+	// TODO call RPC in workewr
 }
 
 func (m Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) {
