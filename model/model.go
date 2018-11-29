@@ -1,7 +1,8 @@
 package model
 
 import (
-	"CS425/CS425-MP4/collector"
+	"CS425/CS425-MP4/bolt"
+	"CS425/CS425-MP4/model"
 )
 
 // EmitType output type
@@ -57,4 +58,11 @@ type CraneTask struct {
 type BoltTuple struct {
 	UUID  string
 	Tuple string
+}
+
+type EmitRules struct {
+	// key: id of bolt or sput
+	// value is listor map of bolt/spouts that it has subscribed to and goruping type.
+	// map from bolt/spout ID to bolt.Grouping
+	Subscribed map[string]map[string]bolt.GroupingType
 }

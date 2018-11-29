@@ -201,6 +201,27 @@ func (i *Index) getNodesWithLeastFiles() []string {
 }
 
 // AddFile AddFile
+func (i *Index) AddToIndex(name string, parallel int) (int, []string) {
+	hash := md5.Sum([]byte(name))
+	_, ok := i.index.Filename[filename]
+	if !ok {
+		// log.Println("Adding new file: ", filename)
+		return i.addFile(filename, hash, parallel)
+	}
+	// log.Println("Updating file: ", filename)
+	return i.updateFile(filename, hash)
+}
+
+func (i *Index) nodeHasFile(filename, id string) bool {
+	for _, val := range i.index.NodesToFile[id] {
+		if val.Filename == filename {
+			return true
+		}
+	}
+	return false
+}
+
+// AddFile AddFile
 func (i *Index) AddFile(filename string, hash [SIZE]byte) (int, []string) {
 	_, ok := i.index.Filename[filename]
 	if !ok {
@@ -221,9 +242,9 @@ func (i *Index) nodeHasFile(filename, id string) bool {
 }
 
 // AddFile add file for first time
-func (i *Index) addFile(filename string, hash [SIZE]byte) (int, []string) {
+func (i *Index) addFile(filename string, hash [SIZE]byte, parallel int) (int, []string) {
 	nodes := i.getNodesWithLeastFiles()
-	replicas := REPLICAS
+	replicas := parallel
 
 	// log.Println("Nodes with least files: ", nodes)
 	nodesWithFile := make([]string, 0)

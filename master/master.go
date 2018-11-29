@@ -32,6 +32,8 @@ type Master struct {
 	spoutIndex index.Index
 	// TODO
 	boltIndex index.Index
+	// workerIndex
+	workers index.Index
 }
 
 // NewMaster init a master
@@ -52,6 +54,7 @@ func (m Master) init(masterConfig []byte) {
 	for _, mem := range m.config.MemList {
 		m.memList[mem] = false
 	}
+	m.emitRules = make(map[string]model.EmitRules{})
 }
 
 func (m Master) addRPCClient(ip string, client *rpc.Client) {
@@ -164,17 +167,25 @@ func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 	}
 
 	// TODO Get emit rule info froim builder and add to emit ruiles
+	subscribed = make(model.EmitRules{})
+	for bolt := range builder.Bolt {
+		subscribed[builder.Bolt[bolt].ID] = builder.Bolt[bolt].Grouping
+	}
+	m.emitRules[builder.ID] = subscribed
+
 	m.streamBuilders[builder.ID] = builder
 
 	for spout := range m.streamBuilders[builder.ID].Spout {
-		parallelList := m.spoutIndex.AddSpout(spout, builder.Spout[spout].Parallel)
+		parallelList := m.spoutIndex.AddToIndex(spout, builder.Spout[spout].Parallel)
+		// workers[spout] = parallelList
 		for worker := range parallelList {
 			m.askWorkerPrepareSpout(worker, spout.Spout)
 		}
 	}
 
 	for bolt := range builder.Bolt {
-		parallelList := m.boltIndex.AddBolt(bolt, builder.Bolt[bolt].Parallel)
+		parallelList := m.boltIndex.AddToIndex(bolt, builder.Bolt[bolt].Parallel)
+		// workers[builder.ID] = parallelList
 		for worker := range parallelList {
 			m.askPrepareBolt()
 		}
@@ -185,10 +196,28 @@ func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 
 func (m Master) askWorkerPrepareSpout(ip string, spout spout.Spout) {
 	// TODO call RPC in workewr
+	client, err := m.getRPCClient(ip)
+	if err != nil {
+		return err
+	}
+
+	err = client.Call("Worker.RPCPrepareSpout", spout, nil)
+	if err != nil {
+		return err
+	}
 }
 
 func (m Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) {
 	// TODO
+	client, err := m.getRPCClient(ip)
+	if err != nil {
+		return err
+	}
+
+	err = client.Call("Worker.RPCPrepareBolt", bolt, nil)
+	if err != nil {
+		return err
+	}
 }
 
 func (m Master) askToExecuteTask(ip string, uuid string) {
@@ -203,8 +232,10 @@ func (m Master) askToExecuteTask(ip string, uuid string) {
 	}
 }
 
-func (m Master) getWorkerForTask(uuid string) error {
+func (m Master) getWorkerForTask(uuid string) ([]string, error) {
 	// TODO
+	_, workers := m.workers.AddToIndex(uuid, 1)
+	return workers, nil
 }
 
 func (m Master) executeTask(uuid string) error {
