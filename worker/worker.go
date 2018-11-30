@@ -56,6 +56,7 @@ func (w *Worker) getPort() int {
 func (w *Worker) RPCMasterPing(ip string, reply *bool) error {
 	if ip != w.masterIP {
 		log.Printf("new master %v\n", ip)
+		w.masterIP = ip
 		client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, w.config.Port))
 		if err != nil {
 			return err
