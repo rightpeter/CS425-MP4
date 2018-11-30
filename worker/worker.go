@@ -38,6 +38,18 @@ func (w Worker) init(workerConfig []byte) {
 	w.boltChannels = map[string]chan model.BoltTuple{}
 }
 
+func (w Worker) getLogPath() string {
+	return w.config.LogPath
+}
+
+func (w Worker) getIP() string {
+	return w.config.IP
+}
+
+func (w Worker) getPort() int {
+	return w.config.Port
+}
+
 // RPCMasterPing rpc master ping
 func (w *Worker) RPCMasterPing(ip string, reply *bool) error {
 	// TODO
@@ -85,7 +97,6 @@ func (w *Worker) RPCPrepareBolt(bolt bolt.RPCBolt, reply *string) error {
 func main() {
 	// parse argument
 	configFilePath := flag.String("c", "./config.json", "Config file path")
-	fdConfigFilePath := flag.String("fdc", "./failure_detector.config.json", "Failure Detector Config file path")
 
 	// load config file
 	configFile, err := ioutil.ReadFile(*configFilePath)
@@ -93,16 +104,10 @@ func main() {
 		log.Fatalf("File error: %v\n", err)
 	}
 
-	// load fd config file
-	fdConfigFile, err := ioutil.ReadFile(*fdConfigFilePath)
-	if err != nil {
-		log.Fatalf("File error: %v\n", err)
-	}
-
 	// Class for server
-	s := NewSDFS(configFile, fdConfigFile)
+	w := NewWorker(configFile)
 
-	f, err := os.OpenFile(s.getLogPath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(w.getLogPath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
@@ -110,22 +115,14 @@ func main() {
 
 	log.SetOutput(f)
 
-	go s.startFailureDetector()
-	go s.keepUpdatingMemberList()
-
-	err = s.initIndex()
-	if err != nil {
-		log.Printf("main: Index init failed")
-	}
-
 	// init the rpc server
-	rpc.Register(s)
+	rpc.Register(w)
 	rpc.HandleHTTP()
-	l, e := net.Listen("tcp", fmt.Sprintf(":%d", s.getPort()))
+	l, e := net.Listen("tcp", fmt.Sprintf(":%d", w.getPort()))
 	if e != nil {
 		log.Fatal("listen error: ", e)
 	}
 
-	log.Printf("Start listen rpc on port: %d", s.getPort())
+	log.Printf("Start listen rpc on port: %d", w.getPort())
 	http.Serve(l, nil)
 }

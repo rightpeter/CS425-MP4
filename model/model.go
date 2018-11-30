@@ -40,6 +40,7 @@ type CraneConfig struct {
 	MemList     []string `json:"member_list"`
 	SleepTime   int      `json:"sleep_time"`   // Millisecond
 	TaskTimeout int      `json:"task_timeout"` // Millisecond
+	LogPath     string   `json:"log_path"`
 }
 
 // Tuple tuple
