@@ -123,7 +123,7 @@ func (m *Master) removeNode(ip string) error {
 func (m *Master) pingMember(ip string) error {
 	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, m.config.Port))
 	if err != nil {
-		fmt.Printf("pingMember: rpc.DialHTTP failed")
+		log.Printf("pingMember %v: rpc.DialHTTP failed\n", ip)
 		m.memList[ip] = false
 		m.deleteRPCClient(ip)
 		m.removeNode(ip)
