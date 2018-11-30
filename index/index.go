@@ -273,7 +273,7 @@ func (i *Index) getNodesWithLeastFiles() []string {
 	return Sortedids
 }
 
-// AddFile AddFile
+// AddToIndex AddFile
 func (i *Index) AddToIndex(filename string, parallel int) []string {
 	hash := md5.Sum([]byte(filename))
 	_, ok := i.index.Filename[filename]

@@ -9,9 +9,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/rpc"
 	"sync"
 	"time"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 // Master master
@@ -79,17 +82,18 @@ func (m Master) getRPCClient(ip string) (*rpc.Client, error) {
 }
 
 func (m Master) removeNode(ip string) error {
-	rePrepareList := m.spoutIndex.RemoveNode(ip)
+	spoutRePrepareList := m.spoutIndex.RemoveNode(ip)
 
-	for _, prepare := range rePrepareList {
+	for _, prepare := range spoutRePrepareList {
 		m.askWorkerPrepareSpout(prepare.IP, m.spoutBuilders[prepare.ID].Spout)
 	}
 
-	rePrepareList := m.boltIndex.RemoveNode(ip)
+	boltRePrepareList := m.boltIndex.RemoveNode(ip)
 
-	for _, prepare := range rePrepareList {
+	for _, prepare := range boltRePrepareList {
 		m.askWorkerPrepareBolt(prepare.IP, m.boltBuilders[prepare.ID].Bolt)
 	}
+	return nil
 }
 
 func (m Master) pingMember(ip string) error {
@@ -155,32 +159,30 @@ func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 		for target, groupingType := range boltBuilder.Grouping {
 			m.emitRules[target][bolt] = groupingType
 		}
-		m.emitRules[builder.Bolt[bolt].ID] = builder.Bolt[bolt].Grouping
 	}
-	m.emitRules[builder.ID] = subscribed
 
 	m.streamBuilders[builder.ID] = builder
 
-	for spout := range m.streamBuilders[builder.ID].Spout {
-		parallelList := m.spoutIndex.AddToIndex(spout, builder.Spout[spout].Parallel)
+	for spoutID, spoutBuilder := range m.streamBuilders[builder.ID].Spout {
+		parallelList := m.spoutIndex.AddToIndex(spoutID, spoutBuilder.Parallel)
 		// workers[spout] = parallelList
-		for worker := range parallelList {
-			m.askWorkerPrepareSpout(worker, spout.Spout)
+		for _, worker := range parallelList {
+			m.askWorkerPrepareSpout(worker, spoutBuilder.Spout)
 		}
 	}
 
-	for bolt := range builder.Bolt {
-		parallelList := m.boltIndex.AddToIndex(bolt, builder.Bolt[bolt].Parallel)
+	for boltID, boltBuilder := range builder.Bolt {
+		parallelList := m.boltIndex.AddToIndex(boltID, boltBuilder.Parallel)
 		// workers[builder.ID] = parallelList
-		for worker := range parallelList {
-			m.askPrepareBolt()
+		for _, worker := range parallelList {
+			m.askWorkerPrepareBolt(worker, boltBuilder.Bolt)
 		}
 	}
 
 	return nil
 }
 
-func (m Master) askWorkerPrepareSpout(ip string, spout spout.Spout) {
+func (m Master) askWorkerPrepareSpout(ip string, spout spout.Spout) error {
 	// TODO call RPC in workewr
 	client, err := m.getRPCClient(ip)
 	if err != nil {
@@ -191,9 +193,11 @@ func (m Master) askWorkerPrepareSpout(ip string, spout spout.Spout) {
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
-func (m Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) {
+func (m Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) error {
 	// TODO
 	client, err := m.getRPCClient(ip)
 	if err != nil {
@@ -204,9 +208,11 @@ func (m Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) {
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
-func (m Master) askToExecuteTask(ip string, uuid string) {
+func (m Master) askToExecuteTask(ip string, uuid string) error {
 	client, err := m.getRPCClient(ip)
 	if err != nil {
 		return err
@@ -216,19 +222,21 @@ func (m Master) askToExecuteTask(ip string, uuid string) {
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
 func (m Master) getWorkerForTask(uuid string) ([]string, error) {
 	// TODO
-	tupleType:=m.taskMap[uuid]
+	tupleType := m.taskMap[uuid]
 	var potentialWorkers []string
-	if tupleType.Tuple.EmitType==model.SpoutEmitType{
+	if tupleType.Tuple.EmitType == model.SpoutEmitType {
 		potentialWorkers = m.spoutIndex.GetNodesWithFile(tupleType.Tuple.ID)
-	}else{
+	} else {
 		potentialWorkers = m.boltIndex.GetNodesWithFile(tupleType.Tuple.ID)
 	}
 	r := rand.Intn(len(potentialWorkers))
-	return {potentialWorkers[r]}, nil
+	return []string{potentialWorkers[r]}, nil
 }
 
 func (m Master) executeTask(uuid string) error {
@@ -240,14 +248,18 @@ func (m Master) executeTask(uuid string) error {
 	for _, worker := range workers {
 		m.askToExecuteTask(worker, uuid)
 	}
+
+	return nil
 }
 
 func (m Master) dealWithEmit(emit model.TaskEmit) error {
 	for _, tuple := range emit.Tuples {
-		uuid, err := uuid.NewV4().String()
+		uuidObject, err := uuid.NewV4()
 		if err != nil {
 			return err
 		}
+
+		uuid := uuidObject.String()
 
 		m.taskMapMutex.Lock()
 		m.taskMap[uuid] = model.CraneTask{
@@ -273,6 +285,7 @@ func (m Master) dealWithEmit(emit model.TaskEmit) error {
 		}(uuid)
 	}
 
+	return nil
 }
 
 // RPCEmit rpc emit
@@ -281,13 +294,17 @@ func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
 		if m.taskMap[emit.UUID].Finished {
 			return errors.New("task has been finished")
 		}
+
+		tmpTask := m.taskMap[emit.UUID]
+		tmpTask.Finished = true
+		tmpTask.Succeed = true
+
 		m.taskMapMutex.Lock()
-		m.taskMap[emit.UUID].Finished = true
-		m.taskMap[emit.UUID].Succeed = true
+		m.taskMap[emit.UUID] = tmpTask
 		m.taskMapMutex.Unlock()
 	}
 
-	err = m.dealWithEmit(emit)
+	err := m.dealWithEmit(emit)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package tpbuilder
 
 import (
 	"CS425/CS425-MP4/bolt"
+	"CS425/CS425-MP4/model"
 	"CS425/CS425-MP4/spout"
 	"fmt"
 	"log"
@@ -40,7 +41,7 @@ func (t TpBuilder) SetSpout(id string, sp spout.Spout, parallel int) spout.Build
 
 // SetBolt set bolt
 func (t TpBuilder) SetBolt(id string, bt bolt.Bolt, parallel int) bolt.Builder {
-	boltBuilder := bolt.Builder{ID: id, Bolt: bt, Parallel: parallel, Grouping: map[string]bolt.GroupingType{}}
+	boltBuilder := bolt.Builder{ID: id, Bolt: bt, Parallel: parallel, Grouping: map[string]model.GroupingType{}}
 	t.builder.Bolt[id] = boltBuilder
 	return boltBuilder
 }

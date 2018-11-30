@@ -15,12 +15,12 @@ type Builder struct {
 	ID       string
 	Bolt     Bolt
 	Parallel int
-	Grouping map[string]GroupingType
+	Grouping map[string]model.GroupingType
 }
 
 // ShuffleGrouping shuffle grouping
 func (b Builder) ShuffleGrouping(id string) {
-	b.Grouping[id] = ShuffleGroupingType
+	b.Grouping[id] = model.ShuffleGroupingType
 }
 
 // RPCBolt rpc bolt
