@@ -24,6 +24,7 @@ type Worker struct {
 	boltStopChannels map[string]chan bool
 	config           model.CraneConfig
 	client           *rpc.Client
+	masterIP         string
 }
 
 // NewWorker init a worker
@@ -34,6 +35,7 @@ func NewWorker(workerConfig []byte) *Worker {
 }
 
 func (w *Worker) init(workerConfig []byte) {
+	w.masterIP = "127.0.0.1"
 	json.Unmarshal(workerConfig, &w.config)
 	w.boltChannels = map[string]chan model.BoltTuple{}
 }
@@ -52,13 +54,13 @@ func (w *Worker) getPort() int {
 
 // RPCMasterPing rpc master ping
 func (w *Worker) RPCMasterPing(ip string, reply *bool) error {
-	// TODO
-	// ip is the ip of the master
-	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, w.config.Port))
-	if err != nil {
-		return err
+	if ip != w.masterIP {
+		client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, w.config.Port))
+		if err != nil {
+			return err
+		}
+		w.client = client
 	}
-	w.client = client
 	return nil
 }
 
