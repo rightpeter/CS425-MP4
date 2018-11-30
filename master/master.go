@@ -17,6 +17,7 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"os"
 	"sync"
 	"time"
 
@@ -43,46 +44,59 @@ type Master struct {
 }
 
 // NewMaster init a master
-func NewMaster(masterConfig []byte) Master {
-	master := Master{}
+func NewMaster(masterConfig []byte) *Master {
+	master := &Master{}
 	master.init(masterConfig)
 
 	return master
 }
 
-func (m Master) loadConfigFromJSON(jsonFile []byte) error {
+func (m *Master) loadConfigFromJSON(jsonFile []byte) error {
 	return json.Unmarshal(jsonFile, &m.config)
 }
 
-func (m Master) getPort() int {
-	return m.config.Port
-}
-
-func (m Master) init(masterConfig []byte) {
+func (m *Master) init(masterConfig []byte) {
 	json.Unmarshal(masterConfig, &m.config)
+	m.taskMapMutex = &sync.Mutex{}
 	m.taskMap = map[string]model.CraneTask{}
+	m.nodesRPCClientsMutex = &sync.Mutex{}
 	m.nodesRPCClients = map[string]*rpc.Client{}
+	m.memListMutex = &sync.Mutex{}
+	m.memList = map[string]bool{}
 	for _, mem := range m.config.MemList {
 		m.memList[mem] = false
 	}
 	m.emitRules = map[string]map[string]model.GroupingType{}
 }
 
-func (m Master) addRPCClient(ip string, client *rpc.Client) {
+func (m *Master) getLogPath() string {
+	return m.config.LogPath
+}
+
+func (m *Master) getIP() string {
+	return m.config.IP
+}
+
+func (m *Master) getPort() int {
+	return m.config.Port
+}
+
+func (m *Master) addRPCClient(ip string, client *rpc.Client) {
 	if _, ok := m.nodesRPCClients[ip]; !ok {
 		m.nodesRPCClientsMutex.Lock()
+		log.Printf("add a rpc client", ip)
 		m.nodesRPCClients[ip] = client
 		m.nodesRPCClientsMutex.Unlock()
 	}
 }
 
-func (m Master) deleteRPCClient(ip string) {
+func (m *Master) deleteRPCClient(ip string) {
 	m.nodesRPCClientsMutex.Lock()
 	delete(m.nodesRPCClients, ip)
 	m.nodesRPCClientsMutex.Unlock()
 }
 
-func (m Master) getRPCClient(ip string) (*rpc.Client, error) {
+func (m *Master) getRPCClient(ip string) (*rpc.Client, error) {
 	client := &rpc.Client{}
 	ok := false
 	if client, ok = m.nodesRPCClients[ip]; !ok {
@@ -91,7 +105,7 @@ func (m Master) getRPCClient(ip string) (*rpc.Client, error) {
 	return client, nil
 }
 
-func (m Master) removeNode(ip string) error {
+func (m *Master) removeNode(ip string) error {
 	spoutRePrepareList := m.spoutIndex.RemoveNode(ip)
 
 	for _, prepare := range spoutRePrepareList {
@@ -106,7 +120,7 @@ func (m Master) removeNode(ip string) error {
 	return nil
 }
 
-func (m Master) pingMember(ip string) error {
+func (m *Master) pingMember(ip string) error {
 	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, m.config.Port))
 	if err != nil {
 		fmt.Printf("pingMember: rpc.DialHTTP failed")
@@ -116,18 +130,20 @@ func (m Master) pingMember(ip string) error {
 		return err
 	}
 
+	log.Printf("ping %v ing", ip)
 	m.addRPCClient(ip, client)
 	m.rpcPingMember(ip)
 	return nil
 }
 
-func (m Master) rpcPingMember(ip string) error {
+func (m *Master) rpcPingMember(ip string) error {
 	client, err := m.getRPCClient(ip)
 	if err != nil {
 		return err
 	}
 
-	err = client.Call("Worker.RPCMasterPing", m.config.IP, nil)
+	var reply bool
+	err = client.Call("Worker.RPCMasterPing", m.config.IP, &reply)
 	if err != nil {
 		return err
 	}
@@ -136,16 +152,17 @@ func (m Master) rpcPingMember(ip string) error {
 }
 
 // KeepPingMemberList keep ping member list
-func (m Master) KeepPingMemberList() {
+func (m *Master) KeepPingMemberList() {
 	for {
 		time.Sleep(time.Duration(m.config.SleepTime) * time.Millisecond)
 		for mem := range m.memList {
 			go m.pingMember(mem)
+			log.Printf("mem: %s", mem)
 		}
 	}
 }
 
-func (m Master) addRPCClientForNode(ip string) []string {
+func (m *Master) addRPCClientForNode(ip string) []string {
 	failNodes := []string{}
 	fmt.Printf("addRPCClientForNode: try to add rpc client to %s\n", ip)
 	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, m.config.Port))
@@ -192,7 +209,7 @@ func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 	return nil
 }
 
-func (m Master) askWorkerPrepareSpout(ip string, spout spout.Spout) error {
+func (m *Master) askWorkerPrepareSpout(ip string, spout spout.Spout) error {
 	// TODO call RPC in workewr
 	client, err := m.getRPCClient(ip)
 	if err != nil {
@@ -207,7 +224,7 @@ func (m Master) askWorkerPrepareSpout(ip string, spout spout.Spout) error {
 	return nil
 }
 
-func (m Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) error {
+func (m *Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) error {
 	// TODO
 	client, err := m.getRPCClient(ip)
 	if err != nil {
@@ -222,7 +239,7 @@ func (m Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) error {
 	return nil
 }
 
-func (m Master) askToExecuteTask(ip string, uuid string) error {
+func (m *Master) askToExecuteTask(ip string, uuid string) error {
 	client, err := m.getRPCClient(ip)
 	if err != nil {
 		return err
@@ -236,7 +253,7 @@ func (m Master) askToExecuteTask(ip string, uuid string) error {
 	return nil
 }
 
-func (m Master) getWorkerForTask(uuid string) ([]string, error) {
+func (m *Master) getWorkerForTask(uuid string) ([]string, error) {
 	// TODO
 	tupleType := m.taskMap[uuid]
 	var potentialWorkers []string
@@ -249,7 +266,7 @@ func (m Master) getWorkerForTask(uuid string) ([]string, error) {
 	return []string{potentialWorkers[r]}, nil
 }
 
-func (m Master) executeTask(uuid string) error {
+func (m *Master) executeTask(uuid string) error {
 	workers, err := m.getWorkerForTask(uuid)
 	if err != nil {
 		return err
@@ -262,7 +279,7 @@ func (m Master) executeTask(uuid string) error {
 	return nil
 }
 
-func (m Master) dealWithEmit(emit model.TaskEmit) error {
+func (m *Master) dealWithEmit(emit model.TaskEmit) error {
 	for _, tuple := range emit.Tuples {
 		uuidObject, err := uuid.NewV4()
 		if err != nil {
@@ -331,6 +348,15 @@ func main() {
 	}
 
 	m := NewMaster(masterConfigFile)
+
+	f, err := os.OpenFile(m.getLogPath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+
 	go m.KeepPingMemberList()
 
 	// init the rpc server

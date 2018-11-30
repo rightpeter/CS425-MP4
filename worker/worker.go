@@ -27,26 +27,26 @@ type Worker struct {
 }
 
 // NewWorker init a worker
-func NewWorker(workerConfig []byte) Worker {
-	worker := Worker{}
+func NewWorker(workerConfig []byte) *Worker {
+	worker := &Worker{}
 	worker.init(workerConfig)
 	return worker
 }
 
-func (w Worker) init(workerConfig []byte) {
+func (w *Worker) init(workerConfig []byte) {
 	json.Unmarshal(workerConfig, &w.config)
 	w.boltChannels = map[string]chan model.BoltTuple{}
 }
 
-func (w Worker) getLogPath() string {
+func (w *Worker) getLogPath() string {
 	return w.config.LogPath
 }
 
-func (w Worker) getIP() string {
+func (w *Worker) getIP() string {
 	return w.config.IP
 }
 
-func (w Worker) getPort() int {
+func (w *Worker) getPort() int {
 	return w.config.Port
 }
 
