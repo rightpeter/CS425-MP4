@@ -105,7 +105,7 @@ func (i *Index) getLatestFileVersion(filename string) model.FileVersion {
 }
 
 // RemoveNode RemoveNode
-func (i *Index) RemoveNode(id string) []model.PullInstruction {
+func (i *Index) RemoveNode(id string) model.RemoveNodeReturn {
 	instructions := []model.PullInstruction{}
 	delete(i.numFiles, id)
 
@@ -113,6 +113,8 @@ func (i *Index) RemoveNode(id string) []model.PullInstruction {
 	nodes := i.getNodesWithLeastFiles()
 	filesOnNode := i.index.NodesToFile[id]
 	delete(i.index.NodesToFile, id)
+
+	newIP := ""
 
 	for _, file := range filesOnNode {
 		ind := i.findIndex(i.index.FileToNodes[file.Filename], id)
@@ -136,6 +138,7 @@ func (i *Index) RemoveNode(id string) []model.PullInstruction {
 					PullFrom: i.GetNodesWithFile(file.Filename), // some node which has filen
 				}
 				instructions = append(instructions, inst)
+				newIP = node
 
 				// update NodeToFile and FileToNodes
 				fs := model.FileStructure{
@@ -157,8 +160,68 @@ func (i *Index) RemoveNode(id string) []model.PullInstruction {
 		}
 	}
 
-	return instructions
+	ret := model.RemoveNodeReturn{
+		IP:         newIP,
+		DataOnNode: filesOnNode,
+	}
+	return ret
 }
+
+// // RemoveNode RemoveNode
+// func (i *Index) RemoveNode(id string) []model.PullInstruction {
+// 	instructions := []model.PullInstruction{}
+// 	delete(i.numFiles, id)
+
+// 	// delete from global file index as well
+// 	nodes := i.getNodesWithLeastFiles()
+// 	filesOnNode := i.index.NodesToFile[id]
+// 	delete(i.index.NodesToFile, id)
+
+// 	for _, file := range filesOnNode {
+// 		ind := i.findIndex(i.index.FileToNodes[file.Filename], id)
+// 		for _, fv := range i.index.Fileversions[file.Filename] {
+// 			ind := i.findIndex(fv.Nodes, id)
+// 			if ind != -1 {
+// 				fv.Nodes = i.removeFromSlice(ind, fv.Nodes)
+// 			}
+// 		}
+
+// 		if ind != -1 {
+// 			i.index.FileToNodes[file.Filename] = i.removeFromSlice(ind, i.index.FileToNodes[file.Filename])
+// 		}
+// 		for _, node := range nodes {
+// 			// send only the latest file version for replication
+// 			if i.index.Filename[file.Filename].Hash == file.Hash && !i.nodeHasFile(file.Filename, node) {
+// 				// send file and break
+// 				inst := model.PullInstruction{
+// 					Filename: fmt.Sprintf("%s_%d", file.Filename, file.Version),
+// 					Node:     node,
+// 					PullFrom: i.GetNodesWithFile(file.Filename), // some node which has filen
+// 				}
+// 				instructions = append(instructions, inst)
+
+// 				// update NodeToFile and FileToNodes
+// 				fs := model.FileStructure{
+// 					Version:  file.Version,
+// 					Filename: file.Filename,
+// 					Hash:     file.Hash,
+// 				}
+// 				i.index.NodesToFile[node] = append(i.index.NodesToFile[node], fs)
+
+// 				// update FileToNodes
+// 				i.index.FileToNodes[file.Filename] = append(i.index.FileToNodes[file.Filename], node)
+
+// 				//update Fileversions
+// 				latestFV := i.getLatestFileVersion(file.Filename)
+// 				latestFV.Nodes = append(latestFV.Nodes, node)
+
+// 				break
+// 			}
+// 		}
+// 	}
+
+// 	return instructions
+// }
 
 func (i *Index) removeFromSlice(ind int, slice []string) []string {
 	// log.Println("removeFromSlice ", slice, ind)

@@ -91,3 +91,8 @@ type PullInstruction struct {
 	Node     string
 	PullFrom []string // IDs with file
 }
+
+type RemoveNodeReturn struct {
+	IP         string
+	DataOnNode []FileStructure
+}
