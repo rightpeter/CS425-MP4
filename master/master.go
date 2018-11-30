@@ -6,10 +6,16 @@ import (
 	"CS425/CS425-MP4/model"
 	"CS425/CS425-MP4/spout"
 	"CS425/CS425-MP4/tpbuilder"
+
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
+	"net"
+	"net/http"
 	"net/rpc"
 	"sync"
 	"time"
@@ -316,7 +322,7 @@ func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
 	return nil
 }
 
-func main(){
+func main() {
 	masterConfigFilePath := flag.String("c", "./config.json", "Config file path")
 
 	masterConfigFile, err := ioutil.ReadFile(*masterConfigFilePath)
@@ -330,7 +336,7 @@ func main(){
 	// init the rpc server
 	rpc.Register(m)
 	rpc.HandleHTTP()
-	l, e := net.Listen("tcp", fmt.Sprintf(":%d", m.getPort())
+	l, e := net.Listen("tcp", fmt.Sprintf(":%d", m.getPort()))
 	if e != nil {
 		log.Fatal("listen error: ", e)
 	}
