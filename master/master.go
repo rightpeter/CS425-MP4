@@ -14,6 +14,13 @@ import (
 	"time"
 )
 
+type emitRules struct {
+	// key: id of bolt or sput
+	// value is listor map of bolt/spouts that it has subscribed to and goruping type.
+	// map from bolt/spout ID to bolt.Grouping
+	Subscribed map[string]map[string]bolt.GroupingType
+}
+
 // Master master
 type Master struct {
 	config               model.CraneConfig
@@ -27,7 +34,7 @@ type Master struct {
 	spoutBuilders        map[string]spout.Builder
 	boltBuilders         map[string]bolt.Builder
 	// TODO
-	emitRules map[string]model.EmitRules
+	emitRules map[string]model.emitRules
 	// TODO
 	spoutIndex index.Index
 	// TODO
@@ -54,7 +61,7 @@ func (m Master) init(masterConfig []byte) {
 	for _, mem := range m.config.MemList {
 		m.memList[mem] = false
 	}
-	m.emitRules = make(map[string]model.EmitRules{})
+	m.emitRules = make(map[string]emitRules{})
 }
 
 func (m Master) addRPCClient(ip string, client *rpc.Client) {
@@ -167,7 +174,7 @@ func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 	}
 
 	// TODO Get emit rule info froim builder and add to emit ruiles
-	subscribed = make(model.EmitRules{})
+	subscribed = make(emitRules{})
 	for bolt := range builder.Bolt {
 		subscribed[builder.Bolt[bolt].ID] = builder.Bolt[bolt].Grouping
 	}

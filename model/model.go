@@ -1,9 +1,7 @@
 package model
 
-import (
-	"CS425/CS425-MP4/bolt"
-	"CS425/CS425-MP4/model"
-)
+// SIZE md5 size
+const SIZE = 16
 
 // EmitType output type
 type EmitType uint8
@@ -49,7 +47,7 @@ type TaskEmit struct {
 
 // CraneTask crane task
 type CraneTask struct {
-	Tuple    model.Tuple
+	Tuple    Tuple
 	Finished bool
 	Succeed  bool
 }
@@ -60,9 +58,36 @@ type BoltTuple struct {
 	Tuple string
 }
 
-type EmitRules struct {
-	// key: id of bolt or sput
-	// value is listor map of bolt/spouts that it has subscribed to and goruping type.
-	// map from bolt/spout ID to bolt.Grouping
-	Subscribed map[string]map[string]bolt.GroupingType
+// FileVersion file version
+type FileVersion struct {
+	// nodes with that version
+	Version int
+	Nodes   []string
+	Hash    [SIZE]byte
+}
+
+// FileStructure file structure
+type FileStructure struct {
+	Version  int
+	Filename string
+	Hash     [SIZE]byte
+}
+
+// GlobalIndexFile global index file
+type GlobalIndexFile struct {
+	// map from filename->latest md5 hash
+	Filename map[string]FileStructure
+	// map from Filename to different file versions
+	Fileversions map[string][]FileVersion
+	// map from node ID to list of files on the node
+	NodesToFile map[string][]FileStructure
+	// map from filename to list of nodes with the file
+	FileToNodes map[string][]string
+}
+
+// PullInstruction pull instruction
+type PullInstruction struct {
+	Filename string
+	Node     string
+	PullFrom []string // IDs with file
 }

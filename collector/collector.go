@@ -26,7 +26,7 @@ type OutputCollector struct {
 
 func (o OutputCollector) emit(tuples []string) error {
 	emitTuples := model.TaskEmit{}
-	emitTuple.ID = o.id
+	emitTuples.ID = o.id
 	emitTuples.UUID = o.uuid
 	emitTuples.EmitType = o.emitType
 	emitTuples.Tuples = tuples
@@ -41,7 +41,7 @@ func (o OutputCollector) emit(tuples []string) error {
 
 // Emit bolt emit
 func (o OutputCollector) Emit(tuples []string) error {
-	err := o.emitSpout(tuples)
+	err := o.emit(tuples)
 
 	if err != nil {
 		return err

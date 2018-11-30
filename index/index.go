@@ -232,15 +232,6 @@ func (i *Index) AddFile(filename string, hash [SIZE]byte) (int, []string) {
 	return i.updateFile(filename, hash)
 }
 
-func (i *Index) nodeHasFile(filename, id string) bool {
-	for _, val := range i.index.NodesToFile[id] {
-		if val.Filename == filename {
-			return true
-		}
-	}
-	return false
-}
-
 // AddFile add file for first time
 func (i *Index) addFile(filename string, hash [SIZE]byte, parallel int) (int, []string) {
 	nodes := i.getNodesWithLeastFiles()
