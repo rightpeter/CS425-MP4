@@ -7,6 +7,7 @@ import (
 	"CS425/CS425-MP4/spout"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/rpc"
 )
 
@@ -34,6 +35,12 @@ func (w Worker) init(workerConfig []byte) {
 func (w *Worker) RPCMasterPing(ip string, reply *bool) error {
 	// TODO
 	// ip is the ip of the master
+	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, w.config.Port))
+	if err != nil {
+		return err
+	}
+	w.client = client
+	return nil
 }
 
 // RPCPrepareSpout rpc prepare spout
