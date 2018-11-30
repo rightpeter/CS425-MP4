@@ -220,12 +220,12 @@ func (m Master) askToExecuteTask(ip string, uuid string) {
 
 func (m Master) getWorkerForTask(uuid string) ([]string, error) {
 	// TODO
-	type:=m.taskMap[uuid]
+	tupleType:=m.taskMap[uuid]
 	var potentialWorkers []string
-	if type.Tuple.EmitType==model.SpoutEmitType{
-		potentialWorkers = m.spoutIndex.GetNodesWithFile(type.Tuple.ID)
+	if tupleType.Tuple.EmitType==model.SpoutEmitType{
+		potentialWorkers = m.spoutIndex.GetNodesWithFile(tupleType.Tuple.ID)
 	}else{
-		potentialWorkers = m.boltIndex.GetNodesWithFile(type.Tuple.ID)
+		potentialWorkers = m.boltIndex.GetNodesWithFile(tupleType.Tuple.ID)
 	}
 	r := rand.Intn(len(potentialWorkers))
 	return {potentialWorkers[r]}, nil
