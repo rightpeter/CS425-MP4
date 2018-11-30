@@ -48,6 +48,10 @@ func (m Master) loadConfigFromJSON(jsonFile []byte) error {
 	return json.Unmarshal(jsonFile, &m.config)
 }
 
+func (m Master) getPort() int {
+	return m.config.Port
+}
+
 func (m Master) init(masterConfig []byte) {
 	json.Unmarshal(masterConfig, &m.config)
 	m.taskMap = map[string]model.CraneTask{}
@@ -310,4 +314,28 @@ func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
 	}
 
 	return nil
+}
+
+func main(){
+	masterConfigFilePath := flag.String("c", "./config.json", "Config file path")
+
+	masterConfigFile, err := ioutil.ReadFile(*masterConfigFilePath)
+	if err != nil {
+		log.Fatalf("File error: %v\n", err)
+	}
+
+	m := NewMaster(masterConfigFile)
+	go m.KeepPingMemberList()
+
+	// init the rpc server
+	rpc.Register(m)
+	rpc.HandleHTTP()
+	l, e := net.Listen("tcp", fmt.Sprintf(":%d", m.getPort())
+	if e != nil {
+		log.Fatal("listen error: ", e)
+	}
+
+	log.Printf("Start listen rpc on port: %d", m.getPort())
+	http.Serve(l, nil)
+
 }
