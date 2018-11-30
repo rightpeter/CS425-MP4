@@ -13,6 +13,18 @@ const (
 	BoltEmitType EmitType = 1
 )
 
+// GroupingType grouping type
+type GroupingType uint8
+
+const (
+	// ShuffleGroupingType shuffle grouping type
+	ShuffleGroupingType GroupingType = 0
+	// AllGroupingType all grouping type
+	AllGroupingType GroupingType = 1
+	// FieldsGroupingType fields grouping type
+	FieldsGroupingType GroupingType = 2
+)
+
 // Msg msg
 type Msg struct {
 	TupleID int

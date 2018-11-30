@@ -5,10 +5,17 @@ import (
 	outputCollector "CS425/CS425-MP4/collector"
 	"CS425/CS425-MP4/model"
 	"CS425/CS425-MP4/spout"
+
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net"
+	"net/http"
 	"net/rpc"
+	"os"
 )
 
 // Worker worker
@@ -73,4 +80,52 @@ func (w *Worker) RPCPrepareBolt(bolt bolt.RPCBolt, reply *string) error {
 	}()
 
 	return nil
+}
+
+func main() {
+	// parse argument
+	configFilePath := flag.String("c", "./config.json", "Config file path")
+	fdConfigFilePath := flag.String("fdc", "./failure_detector.config.json", "Failure Detector Config file path")
+
+	// load config file
+	configFile, err := ioutil.ReadFile(*configFilePath)
+	if err != nil {
+		log.Fatalf("File error: %v\n", err)
+	}
+
+	// load fd config file
+	fdConfigFile, err := ioutil.ReadFile(*fdConfigFilePath)
+	if err != nil {
+		log.Fatalf("File error: %v\n", err)
+	}
+
+	// Class for server
+	s := NewSDFS(configFile, fdConfigFile)
+
+	f, err := os.OpenFile(s.getLogPath(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+
+	go s.startFailureDetector()
+	go s.keepUpdatingMemberList()
+
+	err = s.initIndex()
+	if err != nil {
+		log.Printf("main: Index init failed")
+	}
+
+	// init the rpc server
+	rpc.Register(s)
+	rpc.HandleHTTP()
+	l, e := net.Listen("tcp", fmt.Sprintf(":%d", s.getPort()))
+	if e != nil {
+		log.Fatal("listen error: ", e)
+	}
+
+	log.Printf("Start listen rpc on port: %d", s.getPort())
+	http.Serve(l, nil)
 }

@@ -14,13 +14,6 @@ import (
 	"time"
 )
 
-type emitRules struct {
-	// key: id of bolt or sput
-	// value is listor map of bolt/spouts that it has subscribed to and goruping type.
-	// map from bolt/spout ID to bolt.Grouping
-	Subscribed map[string]map[string]bolt.GroupingType
-}
-
 // Master master
 type Master struct {
 	config               model.CraneConfig
@@ -33,12 +26,9 @@ type Master struct {
 	streamBuilders       map[string]tpbuilder.Builder
 	spoutBuilders        map[string]spout.Builder
 	boltBuilders         map[string]bolt.Builder
-	// TODO
-	emitRules map[string]model.emitRules
-	// TODO
-	spoutIndex index.Index
-	// TODO
-	boltIndex index.Index
+	emitRules            map[string]map[string]model.GroupingType
+	spoutIndex           index.Index
+	boltIndex            index.Index
 	// workerIndex
 	workers index.Index
 }
@@ -47,6 +37,7 @@ type Master struct {
 func NewMaster(masterConfig []byte) Master {
 	master := Master{}
 	master.init(masterConfig)
+
 	return master
 }
 
@@ -61,7 +52,7 @@ func (m Master) init(masterConfig []byte) {
 	for _, mem := range m.config.MemList {
 		m.memList[mem] = false
 	}
-	m.emitRules = make(map[string]emitRules{})
+	m.emitRules = map[string]map[string]model.GroupingType{}
 }
 
 func (m Master) addRPCClient(ip string, client *rpc.Client) {
@@ -82,25 +73,19 @@ func (m Master) getRPCClient(ip string) (*rpc.Client, error) {
 	client := &rpc.Client{}
 	ok := false
 	if client, ok = m.nodesRPCClients[ip]; !ok {
-		return nil, fmt.Errorf("no rpc client for node: %v", nodeID)
+		return nil, fmt.Errorf("no rpc client for node: %v", ip)
 	}
 	return client, nil
 }
 
 func (m Master) removeNode(ip string) error {
-	rePrepareList, err := m.spoutIndex.RemoveNode(ip)
-	if err != nil {
-		return err
-	}
+	rePrepareList := m.spoutIndex.RemoveNode(ip)
 
 	for _, prepare := range rePrepareList {
 		m.askWorkerPrepareSpout(prepare.IP, m.spoutBuilders[prepare.ID].Spout)
 	}
 
-	rePrepareList, err := m.boltIndex.RemoveNode(ip)
-	if err != nil {
-		return err
-	}
+	rePrepareList := m.boltIndex.RemoveNode(ip)
 
 	for _, prepare := range rePrepareList {
 		m.askWorkerPrepareBolt(prepare.IP, m.boltBuilders[prepare.ID].Bolt)
@@ -108,7 +93,7 @@ func (m Master) removeNode(ip string) error {
 }
 
 func (m Master) pingMember(ip string) error {
-	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", mem, m.config.Port))
+	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, m.config.Port))
 	if err != nil {
 		fmt.Printf("pingMember: rpc.DialHTTP failed")
 		m.memList[ip] = false
@@ -158,15 +143,6 @@ func (m Master) addRPCClientForNode(ip string) []string {
 	return failNodes
 }
 
-func (m Master) getRPCClient(ip string) (*rpc.Client, error) {
-	client := &rpc.Client{}
-	ok := false
-	if client, ok = m.nodesRPCClients[ip]; !ok {
-		return nil, fmt.Errorf("no rpc client for node: %v", ip)
-	}
-	return client, nil
-}
-
 // RPCSubmitStream RPC submit stream
 func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 	if _, ok := m.streamBuilders[builder.ID]; ok {
@@ -174,9 +150,12 @@ func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
 	}
 
 	// TODO Get emit rule info froim builder and add to emit ruiles
-	subscribed = make(emitRules{})
-	for bolt := range builder.Bolt {
-		subscribed[builder.Bolt[bolt].ID] = builder.Bolt[bolt].Grouping
+	for bolt, boltBuilder := range builder.Bolt {
+
+		for target, groupingType := range boltBuilder.Grouping {
+			m.emitRules[target][bolt] = groupingType
+		}
+		m.emitRules[builder.Bolt[bolt].ID] = builder.Bolt[bolt].Grouping
 	}
 	m.emitRules[builder.ID] = subscribed
 
