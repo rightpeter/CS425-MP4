@@ -105,6 +105,6 @@ type PullInstruction struct {
 }
 
 type RemoveNodeReturn struct {
-	IP         string
-	DataOnNode []FileStructure
+	IP string
+	ID string
 }

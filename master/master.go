@@ -220,8 +220,15 @@ func (m Master) askToExecuteTask(ip string, uuid string) {
 
 func (m Master) getWorkerForTask(uuid string) ([]string, error) {
 	// TODO
-	_, workers := m.workers.AddToIndex(uuid, 1)
-	return workers, nil
+	type:=m.taskMap[uuid]
+	var potentialWorkers []string
+	if type.Tuple.EmitType==model.SpoutEmitType{
+		potentialWorkers = m.spoutIndex.GetNodesWithFile(type.Tuple.ID)
+	}else{
+		potentialWorkers = m.boltIndex.GetNodesWithFile(type.Tuple.ID)
+	}
+	r := rand.Intn(len(potentialWorkers))
+	return {potentialWorkers[r]}, nil
 }
 
 func (m Master) executeTask(uuid string) error {

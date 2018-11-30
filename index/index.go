@@ -105,7 +105,9 @@ func (i *Index) getLatestFileVersion(filename string) model.FileVersion {
 }
 
 // RemoveNode RemoveNode
-func (i *Index) RemoveNode(id string) model.RemoveNodeReturn {
+func (i *Index) RemoveNode(id string) []model.RemoveNodeReturn {
+	ret := []model.RemoveNodeReturn{}
+
 	instructions := []model.PullInstruction{}
 	delete(i.numFiles, id)
 
@@ -114,7 +116,12 @@ func (i *Index) RemoveNode(id string) model.RemoveNodeReturn {
 	filesOnNode := i.index.NodesToFile[id]
 	delete(i.index.NodesToFile, id)
 
-	newIP := ""
+	for _, file := range filesOnNode {
+		rmr := model.RemoveNodeReturn{
+			ID: file.Filename,
+		}
+		ret = append(ret, rmr)
+	}
 
 	for _, file := range filesOnNode {
 		ind := i.findIndex(i.index.FileToNodes[file.Filename], id)
@@ -138,7 +145,14 @@ func (i *Index) RemoveNode(id string) model.RemoveNodeReturn {
 					PullFrom: i.GetNodesWithFile(file.Filename), // some node which has filen
 				}
 				instructions = append(instructions, inst)
-				newIP = node
+
+				for _, file := range filesOnNode {
+					rmr := model.RemoveNodeReturn{
+						IP: node,
+						ID: file.Filename,
+					}
+					ret = append(ret, rmr)
+				}
 
 				// update NodeToFile and FileToNodes
 				fs := model.FileStructure{
@@ -160,10 +174,6 @@ func (i *Index) RemoveNode(id string) model.RemoveNodeReturn {
 		}
 	}
 
-	ret := model.RemoveNodeReturn{
-		IP:         newIP,
-		DataOnNode: filesOnNode,
-	}
 	return ret
 }
 
@@ -264,15 +274,17 @@ func (i *Index) getNodesWithLeastFiles() []string {
 }
 
 // AddFile AddFile
-func (i *Index) AddToIndex(filename string, parallel int) (int, []string) {
+func (i *Index) AddToIndex(filename string, parallel int) []string {
 	hash := md5.Sum([]byte(filename))
 	_, ok := i.index.Filename[filename]
 	if !ok {
 		// log.Println("Adding new file: ", filename)
-		return i.addFile(filename, hash, parallel)
+		_, nodes := i.addFile(filename, hash, parallel)
+		return nodes
 	}
 	// log.Println("Updating file: ", filename)
-	return i.updateFile(filename, hash)
+	_, nodes := i.updateFile(filename, hash)
+	return nodes
 }
 
 func (i *Index) nodeHasFile(filename, id string) bool {
