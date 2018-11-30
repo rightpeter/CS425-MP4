@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"strings"
 )
 
@@ -28,7 +27,7 @@ func (r RandomeSentenceSpout) Activate(collector collector.OutputCollector) {
 	for {
 		select {
 		default:
-			collector.Emit(sentences[rand.Intn(len(sentences))])
+			collector.Emit(sentences)
 		case <-r.stopChan:
 			break
 		}
@@ -43,9 +42,7 @@ type SplitSentenceBolt struct {
 func (s SplitSentenceBolt) Execute(task model.BoltTuple, collector collector.OutputCollector) {
 	words := strings.Fields(task.Tuple)
 
-	for _, word := range words {
-		collector.Emit(word)
-	}
+	collector.Emit(words)
 }
 
 func main() {

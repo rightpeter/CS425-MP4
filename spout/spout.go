@@ -15,3 +15,9 @@ type Builder struct {
 	Spout    Spout
 	Parallel int
 }
+
+// RPCSpout rpc spout
+type RPCSpout struct {
+	ID    string
+	Spout Spout
+}
