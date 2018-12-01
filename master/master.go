@@ -115,7 +115,10 @@ func (m *Master) removeNode(ip string) error {
 	boltRePrepareList := m.boltIndex.RemoveNode(ip)
 
 	for _, prepare := range boltRePrepareList {
-		m.askWorkerPrepareBolt(prepare.IP, m.boltBuilders[prepare.ID].Bolt)
+		err := m.askWorkerPrepareBolt(prepare.IP, m.boltBuilders[prepare.ID].Bolt)
+		if err != nil {
+			log.Printf("removeNode: askWorkerPrepareBolt failed: %v", err)
+		}
 	}
 	return nil
 }
@@ -243,7 +246,10 @@ func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error 
 		parallelList := m.boltIndex.AddToIndex(boltID, boltBuilder.Parallel)
 		log.Printf("RPCSubmitStream: parallelList: %v, parallel: %v", parallelList, boltBuilder.Parallel)
 		for _, worker := range parallelList {
-			m.askWorkerPrepareBolt(worker, boltBuilder.Bolt)
+			err := m.askWorkerPrepareBolt(worker, boltBuilder.Bolt)
+			if err != nil {
+				log.Printf("RPCSubmitStream: askWorkerPrepareBolt fail: %v", err)
+			}
 		}
 	}
 
