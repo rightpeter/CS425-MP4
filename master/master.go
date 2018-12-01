@@ -318,7 +318,10 @@ func (m *Master) executeTask(uuid string) error {
 		}
 
 		for _, ip := range workers {
-			m.askToExecuteTask(ip, uuid, boltID)
+			err = m.askToExecuteTask(ip, uuid, boltID)
+			if err != nil {
+				log.Printf("executeTask: askToExecuteTask fail: %v", err)
+			}
 		}
 
 	}
