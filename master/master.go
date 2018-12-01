@@ -281,6 +281,7 @@ func (m *Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) error {
 }
 
 func (m *Master) askToExecuteTask(ip string, uuid string, boltID string) error {
+	log.Printf("askToExecuteTask: ip: %v, uuid: %v, boltID: %v", ip, uuid, boltID)
 	client, err := m.getRPCClient(ip)
 	if err != nil {
 		return err
