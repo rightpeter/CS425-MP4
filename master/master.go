@@ -280,13 +280,13 @@ func (m *Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) error {
 	return nil
 }
 
-func (m *Master) askToExecuteTask(ip string, uuid string) error {
+func (m *Master) askToExecuteTask(ip string, uuid string, boltID string) error {
 	client, err := m.getRPCClient(ip)
 	if err != nil {
 		return err
 	}
-
-	err = client.Call("Worker.RPCExecuteTask", m.taskMap[uuid], nil)
+	var reply bool
+	err = client.Call("Worker.RPCExecuteTask", model.BoltTuple{UUID: uuid, ID: boltID, Tuple: m.taskMap[uuid].Tuple}, &reply)
 	if err != nil {
 		return err
 	}
@@ -294,30 +294,28 @@ func (m *Master) askToExecuteTask(ip string, uuid string) error {
 	return nil
 }
 
-func (m *Master) getWorkerForTask(uuid string) ([]string, error) {
-	// TODO
-	tupleType := m.taskMap[uuid]
+func (m *Master) getWorkerForTask(boltID string, rule model.GroupingType) ([]string, error) {
 	var potentialWorkers []string
-	if tupleType.Tuple.EmitType == model.SpoutEmitType {
-		potentialWorkers = m.spoutIndex.GetNodesWithFile(tupleType.Tuple.ID)
-	} else {
-		potentialWorkers = m.boltIndex.GetNodesWithFile(tupleType.Tuple.ID)
-	}
+	potentialWorkers = m.boltIndex.GetNodesWithFile(boltID)
+
 	r := rand.Intn(len(potentialWorkers))
 	return []string{potentialWorkers[r]}, nil
 }
 
 func (m *Master) executeTask(uuid string) error {
-	workers, err := m.getWorkerForTask(uuid)
-	if err != nil {
-		return err
-	}
 
-	for _, worker := range workers {
-		err = m.askToExecuteTask(worker, uuid)
+	rules := m.emitRules[m.taskMap[uuid].Tuple.ID]
+	for boltID, rule := range rules {
+		// TODO: grouping type
+		workers, err := m.getWorkerForTask(boltID, rule)
 		if err != nil {
 			return err
 		}
+
+		for _, ip := range workers {
+			m.askToExecuteTask(ip, uuid, boltID)
+		}
+
 	}
 
 	return nil

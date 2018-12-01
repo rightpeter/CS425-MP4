@@ -160,13 +160,22 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 			case task := <-w.boltChannels[theBolt.ID]:
 				collector := outputCollector.NewOutputCollector(theBolt.ID, task.UUID, model.BoltEmitType, w.client)
 				// bolt.Bolt.Execute(task, collector)
-				go w.executeCMD(theBolt.Execute.Name, append(theBolt.Execute.Args, task.Tuple), collector)
+				go w.executeCMD(theBolt.Execute.Name, append(theBolt.Execute.Args, task.Tuple.Content), collector)
 			case <-w.boltStopChannels[theBolt.ID]:
 				break
 			}
 		}
 	}()
 
+	return nil
+}
+
+// RPCExecuteTask rpc execute task
+func (w *Worker) RPCExecuteTask(task model.BoltTuple, reply *bool) error {
+	if _, ok := w.boltChannels[task.ID]; !ok {
+		return fmt.Errorf("no channel for bolt: %v", task.ID)
+	}
+	w.boltChannels[task.ID] <- task
 	return nil
 }
 

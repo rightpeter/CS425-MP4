@@ -68,7 +68,8 @@ type CraneTask struct {
 // BoltTuple bolt tuple
 type BoltTuple struct {
 	UUID  string
-	Tuple string
+	ID    string // ID for the bolt who will handle this BoltTuple
+	Tuple Tuple
 }
 
 // FileVersion file version
