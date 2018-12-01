@@ -231,8 +231,9 @@ func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error 
 	m.streamBuilders[builder.ID] = builder
 
 	for spoutID, spoutBuilder := range m.streamBuilders[builder.ID].Spout {
-		log.Printf("Try to deploy spout: %v", spoutID)
+		log.Printf("RPCSubmitStream: Try to deploy spout: %v", spoutID)
 		parallelList := m.spoutIndex.AddToIndex(spoutID, spoutBuilder.Parallel)
+		log.Printf("RPCSubmitStream: parallelList: %v", parallelList)
 		// workers[spout] = parallelList
 		for _, worker := range parallelList {
 			m.askWorkerPrepareSpout(worker, spoutBuilder.Spout)
@@ -242,6 +243,7 @@ func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error 
 	for boltID, boltBuilder := range builder.Bolt {
 		log.Printf("Try to deploy Bolt: %v", boltID)
 		parallelList := m.boltIndex.AddToIndex(boltID, boltBuilder.Parallel)
+		log.Printf("RPCSubmitStream: parallelList: %v", parallelList)
 		// workers[builder.ID] = parallelList
 		for _, worker := range parallelList {
 			m.askWorkerPrepareBolt(worker, boltBuilder.Bolt)
