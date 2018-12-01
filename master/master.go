@@ -148,6 +148,9 @@ func (m *Master) RPCJoinGroup(ip string, reply *bool) error {
 	m.memList[ip] = true
 	m.memListMutex.Unlock()
 	m.addRPCClient(ip, client)
+	m.spoutIndex.AddNewNode(ip)
+	m.boltIndex.AddNewNode(ip)
+	m.workers.AddNewNode(ip)
 	return nil
 }
 

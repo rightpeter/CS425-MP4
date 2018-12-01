@@ -48,7 +48,10 @@ func LoadFromGlobalIndexFile(file model.GlobalIndexFile) Index {
 // AddNewNode AddNewNode
 func (i *Index) AddNewNode(id string) {
 	// log.Printf("Index: Added new node %v", id)
-	i.numFiles[id] = 0
+	_, ok := i.numFiles[id]
+	if !ok {
+		i.numFiles[id] = 0
+	}
 }
 
 // PrintIndex PrintIndex
