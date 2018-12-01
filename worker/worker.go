@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"time"
 )
 
 // Worker worker
@@ -50,6 +51,31 @@ func (w *Worker) getIP() string {
 
 func (w *Worker) getPort() int {
 	return w.config.Port
+}
+
+func (w *Worker) getMasterIP() string {
+	return w.config.MasterIP
+}
+
+func (w *Worker) getMasterPort() int {
+	return w.config.MasterPort
+}
+
+func (w *Worker) joinGroup() error {
+	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", w.getMasterIP(), w.config.Port))
+	if err != nil {
+		return err
+	}
+
+	w.client = client
+
+	var reply bool
+
+	err = w.client.Call("Master.RPCJoinGroup", w.getIP(), reply)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // RPCMasterPing rpc master ping
@@ -118,6 +144,16 @@ func main() {
 	defer f.Close()
 
 	log.SetOutput(f)
+
+	for {
+		err = w.joinGroup()
+		if err != nil {
+			log.Printf("join group failed, retry 5 sec later")
+			time.Sleep(5 * time.Second)
+		} else {
+			break
+		}
+	}
 
 	// init the rpc server
 	rpc.Register(w)

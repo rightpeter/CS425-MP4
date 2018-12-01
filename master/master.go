@@ -84,7 +84,7 @@ func (m *Master) getPort() int {
 func (m *Master) addRPCClient(ip string, client *rpc.Client) {
 	if _, ok := m.nodesRPCClients[ip]; !ok {
 		m.nodesRPCClientsMutex.Lock()
-		log.Printf("add a rpc client", ip)
+		log.Printf("add a rpc client: %v", ip)
 		m.nodesRPCClients[ip] = client
 		m.nodesRPCClientsMutex.Unlock()
 	}
@@ -129,13 +129,13 @@ func (m *Master) pingMember(ip string) error {
 	var reply bool
 	err = client.Call("Worker.RPCMasterPing", m.config.IP, &reply)
 	if err != nil {
-
 		return err
 	}
 	return nil
 }
 
-func (m *Master) RPCJoinGroup(ip string) error {
+// RPCJoinGroup rpc join group
+func (m *Master) RPCJoinGroup(ip string, reply bool) error {
 	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, m.config.Port))
 	if err != nil {
 		return err
@@ -169,13 +169,12 @@ func (m *Master) KeepPingMemberList() {
 			go func() {
 				err := m.pingMember(mem)
 				if err != nil {
-					log.Printf("pingMember %v: rpc.DialHTTP failed\n", mem)
+					//log.Printf("pingMember %v: rpc.DialHTTP failed\n", mem)
 					m.memList[mem] = false
 					m.deleteRPCClient(mem)
 					m.removeNode(mem)
 				}
 			}()
-			log.Printf("mem: %s", mem)
 		}
 	}
 }
