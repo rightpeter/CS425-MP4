@@ -380,7 +380,7 @@ func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
 	log.Printf("RPCEmit: ID: %v, EmitType: %v, Tuples: %v", emit.ID, emit.EmitType, emit.Tuples)
 	if emit.EmitType == model.BoltEmitType {
 		if m.taskMap[emit.UUID].Finished {
-			return errors.New("task has been finished")
+			return fmt.Errorf("task %v with %v has been finished", emit.UUID, emit.Tuples)
 		}
 
 		m.taskMapMutex.Lock()
