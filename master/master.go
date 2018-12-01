@@ -121,18 +121,28 @@ func (m *Master) removeNode(ip string) error {
 }
 
 func (m *Master) pingMember(ip string) error {
-	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, m.config.Port))
+	client, err := m.getRPCClient(ip)
 	if err != nil {
-		log.Printf("pingMember %v: rpc.DialHTTP failed\n", ip)
-		m.memList[ip] = false
-		m.deleteRPCClient(ip)
-		m.removeNode(ip)
 		return err
 	}
 
-	log.Printf("ping %v ing", ip)
+	var reply bool
+	err = client.Call("Worker.RPCMasterPing", m.config.IP, &reply)
+	if err != nil {
+
+		return err
+	}
+	return nil
+}
+
+func (m *Master) RPCJoinGroup(ip string) error {
+	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, m.config.Port))
+	if err != nil {
+		return err
+	}
+	log.Printf("Joining. IP %v ", ip)
+	m.memList[ip] = true
 	m.addRPCClient(ip, client)
-	m.rpcPingMember(ip)
 	return nil
 }
 
@@ -156,7 +166,15 @@ func (m *Master) KeepPingMemberList() {
 	for {
 		time.Sleep(time.Duration(m.config.SleepTime) * time.Millisecond)
 		for mem := range m.memList {
-			go m.pingMember(mem)
+			go func() {
+				err := m.pingMember(mem)
+				if err != nil {
+					log.Printf("pingMember %v: rpc.DialHTTP failed\n", mem)
+					m.memList[mem] = false
+					m.deleteRPCClient(mem)
+					m.removeNode(mem)
+				}
+			}()
 			log.Printf("mem: %s", mem)
 		}
 	}
