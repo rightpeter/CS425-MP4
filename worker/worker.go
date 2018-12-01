@@ -152,6 +152,7 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 	}
 
 	w.boltChannels[theBolt.ID] = make(chan model.BoltTuple)
+	log.Printf("RPCPrepareBolt: prepare channel for bolt %v", theBolt.ID)
 	w.boltStopChannels[theBolt.ID] = make(chan bool)
 
 	go func() {
@@ -173,7 +174,7 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 
 // RPCExecuteTask rpc execute task
 func (w *Worker) RPCExecuteTask(task model.BoltTuple, reply *bool) error {
-	log.Printf("RPCExecuteTask: task: %v", task.UUID)
+	// log.Printf("RPCExecuteTask: task: %v", task.UUID)
 	if _, ok := w.boltChannels[task.ID]; !ok {
 		return fmt.Errorf("no channel for bolt: %v", task.ID)
 	}
