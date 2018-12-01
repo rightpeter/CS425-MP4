@@ -64,7 +64,7 @@ func (w *Worker) getMasterPort() int {
 }
 
 func (w *Worker) executeCMD(name string, args []string, collector outputCollector.OutputCollector) error {
-	cmd := exec.Command(name, args...)
+	cmd := exec.Command("./bin/"+name, args...)
 	cmdReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
