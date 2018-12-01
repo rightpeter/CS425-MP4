@@ -314,7 +314,10 @@ func (m *Master) executeTask(uuid string) error {
 	}
 
 	for _, worker := range workers {
-		m.askToExecuteTask(worker, uuid)
+		err = m.askToExecuteTask(worker, uuid)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -344,7 +347,11 @@ func (m *Master) dealWithEmit(emit model.TaskEmit) error {
 		go func(uuid string) {
 			for {
 				if !m.taskMap[uuid].Finished {
-					m.executeTask(uuid)
+					log.Printf("dealWithEmit: Try to executeTask: %v", uuid)
+					err := m.executeTask(uuid)
+					if err != nil {
+						log.Printf("dealWithEmit: execute task: %v, failed: %v", uuid, err)
+					}
 				} else {
 					return
 				}
