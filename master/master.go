@@ -358,6 +358,7 @@ func (m *Master) dealWithEmit(emit model.TaskEmit) error {
 
 // RPCEmit rpc emit
 func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
+	log.Printf("RPCEmit: ID: %v, EmitType: %v, Tuples: %v", emit.ID, emit.EmitType, emit.Tuples)
 	if emit.EmitType == model.BoltEmitType {
 		if m.taskMap[emit.UUID].Finished {
 			return errors.New("task has been finished")
