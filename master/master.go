@@ -298,6 +298,10 @@ func (m *Master) getWorkerForTask(boltID string, rule model.GroupingType) ([]str
 	var potentialWorkers []string
 	potentialWorkers = m.boltIndex.GetNodesWithFile(boltID)
 
+	if len(potentialWorkers) == 0 {
+		return nil, fmt.Errorf("no worker for bolt %v", boltID)
+	}
+
 	r := rand.Intn(len(potentialWorkers))
 	return []string{potentialWorkers[r]}, nil
 }
