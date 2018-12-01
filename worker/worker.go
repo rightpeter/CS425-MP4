@@ -72,7 +72,7 @@ func (w *Worker) joinGroup() error {
 
 	var reply bool
 
-	err = w.client.Call("Master.RPCJoinGroup", w.getIP(), reply)
+	err = w.client.Call("Master.RPCJoinGroup", w.getIP(), &reply)
 	if err != nil {
 		return err
 	}
