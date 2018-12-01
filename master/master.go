@@ -82,6 +82,13 @@ func (m *Master) getPort() int {
 	return m.config.Port
 }
 
+func (m *Master) getContentFromUUID(uuid string) string {
+	if _, ok := m.taskMap[uuid]; !ok {
+		return ""
+	}
+	return m.taskMap[uuid].Tuple.Content
+}
+
 func (m *Master) addRPCClient(ip string, client *rpc.Client) {
 	if _, ok := m.nodesRPCClients[ip]; !ok {
 		m.nodesRPCClientsMutex.Lock()
@@ -287,7 +294,7 @@ func (m *Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) error {
 }
 
 func (m *Master) askToExecuteTask(ip string, uuid string, boltID string) error {
-	log.Printf("askToExecuteTask: ip: %v, uuid: %v, boltID: %v", ip, uuid, boltID)
+	log.Printf("askToExecuteTask: ip: %v, uuid: %v, boltID: %v, content: %v", ip, uuid, boltID, m.getContentFromUUID(uuid))
 	client, err := m.getRPCClient(ip)
 	if err != nil {
 		return err
@@ -326,7 +333,7 @@ func (m *Master) executeTask(uuid string) error {
 		for _, ip := range workers {
 			err = m.askToExecuteTask(ip, uuid, boltID)
 			if err != nil {
-				log.Printf("executeTask: askToExecuteTask fail: %v", err)
+				log.Printf("executeTask: askToExecuteTask %v fail: %v", m.getContentFromUUID(uuid), err)
 			}
 		}
 
@@ -359,10 +366,10 @@ func (m *Master) dealWithEmit(emit model.TaskEmit) error {
 		go func(uuid string) {
 			for {
 				if !m.taskMap[uuid].Finished {
-					log.Printf("dealWithEmit: Try to executeTask: %v", uuid)
+					log.Printf("dealWithEmit: Try to executeTask: %v", m.getContentFromUUID(uuid))
 					err := m.executeTask(uuid)
 					if err != nil {
-						log.Printf("dealWithEmit: execute task: %v, failed: %v", uuid, err)
+						log.Printf("dealWithEmit: execute task: %v, failed: %v", m.getContentFromUUID(uuid), err)
 					}
 				} else {
 					return
