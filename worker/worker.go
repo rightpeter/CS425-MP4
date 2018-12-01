@@ -147,7 +147,7 @@ func (w *Worker) RPCPrepareSpout(theSpout spout.Spout, reply *string) error {
 func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 	log.Printf("RPCPrepareBolt: %v", theBolt.ID)
 
-	if _, ok := w.boltChannels[theBolt.ID]; !ok {
+	if _, ok := w.boltChannels[theBolt.ID]; ok {
 		return fmt.Errorf("bolt ID %s has been registered", theBolt.ID)
 	}
 
