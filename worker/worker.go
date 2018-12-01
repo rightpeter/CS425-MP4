@@ -40,6 +40,7 @@ func (w *Worker) init(workerConfig []byte) {
 	w.masterIP = "127.0.0.1"
 	json.Unmarshal(workerConfig, &w.config)
 	w.boltChannels = map[string]chan model.BoltTuple{}
+	w.boltStopChannels = map[string]chan bool{}
 }
 
 func (w *Worker) getLogPath() string {
