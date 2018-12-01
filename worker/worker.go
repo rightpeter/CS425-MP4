@@ -148,7 +148,7 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 	log.Printf("RPCPrepareBolt: %v", theBolt.ID)
 
 	if _, ok := w.boltChannels[theBolt.ID]; !ok {
-		return errors.New("bolt id conflicts")
+		return fmt.Errorf("bolt ID %s has been registered", theBolt.ID)
 	}
 
 	w.boltChannels[theBolt.ID] = make(chan model.BoltTuple)
@@ -158,6 +158,7 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 		for {
 			select {
 			case task := <-w.boltChannels[theBolt.ID]:
+				log.Printf("bolt %v received task %v", theBolt.ID, task.UUID)
 				collector := outputCollector.NewOutputCollector(theBolt.ID, task.UUID, model.BoltEmitType, w.client)
 				// bolt.Bolt.Execute(task, collector)
 				go w.executeCMD(theBolt.Execute.Name, append(theBolt.Execute.Args, task.Tuple.Content), collector)
