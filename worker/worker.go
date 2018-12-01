@@ -111,7 +111,7 @@ func (w *Worker) joinGroup() error {
 
 // RPCMasterPing rpc master ping
 func (w *Worker) RPCMasterPing(ip string, reply *bool) error {
-	log.Printf("Pinged by master %v", ip)
+	// log.Printf("Pinged by master %v", ip)
 	if ip != w.masterIP {
 		log.Printf("new master %v\n", ip)
 		w.masterIP = ip
@@ -173,6 +173,7 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 
 // RPCExecuteTask rpc execute task
 func (w *Worker) RPCExecuteTask(task model.BoltTuple, reply *bool) error {
+	log.Printf("RPCExecuteTask: task: %v", task.UUID)
 	if _, ok := w.boltChannels[task.ID]; !ok {
 		return fmt.Errorf("no channel for bolt: %v", task.ID)
 	}
