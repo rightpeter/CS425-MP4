@@ -62,7 +62,8 @@ func (w *Worker) getMasterPort() int {
 }
 
 func (w *Worker) joinGroup() error {
-	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", w.getMasterIP(), w.config.Port))
+	log.Printf("master_id: %s", w.getMasterIP())
+	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", w.getMasterIP(), w.getMasterPort()))
 	if err != nil {
 		return err
 	}
