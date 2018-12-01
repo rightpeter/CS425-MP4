@@ -74,7 +74,7 @@ func (w *Worker) executeCMD(name string, args []string, collector outputCollecto
 	emitList := []string{}
 	go func() {
 		for scanner.Scan() {
-			fmt.Println(scanner.Text())
+			log.Printf("executeCMD: emit tuple %vf", scanner.Text())
 			emitList = append(emitList, scanner.Text())
 		}
 	}()
