@@ -148,7 +148,7 @@ func main() {
 	for {
 		err = w.joinGroup()
 		if err != nil {
-			log.Printf("join group failed, retry 5 sec later")
+			log.Printf("join group failed, retry 5 sec later: %s", err)
 			time.Sleep(5 * time.Second)
 		} else {
 			break
