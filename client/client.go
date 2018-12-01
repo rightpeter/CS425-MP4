@@ -62,11 +62,11 @@ func main() {
 	//spout := RandomeSentenceSpout{}
 	//splitBolt := SplitSentenceBolt{}
 
-	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "./myspout.bin", Args: []string{"-f", "xxx.txt"}}}
+	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "myspout"}}
 	builder := tpbuilder.NewTpBuilder(craneConfig.MasterIP, craneConfig.MasterPort)
 	builder.SetSpout("spout", mySpout, 5)
 
-	myBolt := bolt.Bolt{ID: "split", Execute: model.CMD{Name: "./mybolt.bin"}}
+	myBolt := bolt.Bolt{ID: "split", Execute: model.CMD{Name: "mybolt"}}
 	splitBt := builder.SetBolt("split", myBolt, 8)
 	splitBt.ShuffleGrouping("spout")
 
