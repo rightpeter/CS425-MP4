@@ -33,7 +33,7 @@ type Master struct {
 	memList              map[string]bool
 	taskMapMutex         *sync.Mutex
 	taskMap              map[string]model.CraneTask
-	streamBuilders       map[string]tpbuilder.Builder
+	streamBuilders       map[string]*tpbuilder.Builder
 	spoutBuilders        map[string]spout.Builder
 	boltBuilders         map[string]bolt.Builder
 	emitRules            map[string]map[string]model.GroupingType
@@ -199,7 +199,7 @@ func (m *Master) addRPCClientForNode(ip string) []string {
 }
 
 // RPCSubmitStream RPC submit stream
-func (m *Master) RPCSubmitStream(builder tpbuilder.Builder, reply *bool) error {
+func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error {
 	if _, ok := m.streamBuilders[builder.ID]; ok {
 		return errors.New("streamID conflicts")
 	}
