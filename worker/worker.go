@@ -71,13 +71,11 @@ func (w *Worker) executeCMD(name string, args []string, collector outputCollecto
 	}
 
 	scanner := bufio.NewScanner(cmdReader)
+	emitList := []string{}
 	go func() {
 		for scanner.Scan() {
 			fmt.Println(scanner.Text())
-			err := collector.Emit([]string{scanner.Text()})
-			if err != nil {
-				log.Printf("executeCMD: collector.Emit fail: %v", err)
-			}
+			emitList = append(emitList, scanner.Text())
 		}
 	}()
 	err = cmd.Start()
@@ -87,6 +85,11 @@ func (w *Worker) executeCMD(name string, args []string, collector outputCollecto
 	err = cmd.Wait()
 	if err != nil {
 		return err
+	}
+
+	err = collector.Emit(emitList)
+	if err != nil {
+		log.Printf("executeCMD: collector.Emit fail: %v", err)
 	}
 
 	return nil
