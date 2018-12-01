@@ -209,6 +209,9 @@ func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error 
 	for bolt, boltBuilder := range builder.Bolt {
 
 		for target, groupingType := range boltBuilder.Grouping {
+			if _, ok := m.emitRules[target]; !ok {
+				m.emitRules[target] = map[string]model.GroupingType{}
+			}
 			m.emitRules[target][bolt] = groupingType
 		}
 	}
