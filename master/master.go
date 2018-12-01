@@ -84,7 +84,6 @@ func (m *Master) getPort() int {
 func (m *Master) addRPCClient(ip string, client *rpc.Client) {
 	if _, ok := m.nodesRPCClients[ip]; !ok {
 		m.nodesRPCClientsMutex.Lock()
-		log.Printf("add a rpc client: %v", ip)
 		m.nodesRPCClients[ip] = client
 		m.nodesRPCClientsMutex.Unlock()
 	}
@@ -135,13 +134,15 @@ func (m *Master) pingMember(ip string) error {
 }
 
 // RPCJoinGroup rpc join group
-func (m *Master) RPCJoinGroup(ip string, reply bool) error {
+func (m *Master) RPCJoinGroup(ip string, reply *bool) error {
 	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", ip, m.config.Port))
 	if err != nil {
 		return err
 	}
 	log.Printf("Joining. IP %v ", ip)
+	m.memListMutex.Lock()
 	m.memList[ip] = true
+	m.memListMutex.Unlock()
 	m.addRPCClient(ip, client)
 	return nil
 }
@@ -162,19 +163,25 @@ func (m *Master) rpcPingMember(ip string) error {
 }
 
 // KeepPingMemberList keep ping member list
-func (m *Master) KeepPingMemberList() {
+func (m *Master) keepPingMemberList() {
 	for {
 		time.Sleep(time.Duration(m.config.SleepTime) * time.Millisecond)
-		for mem := range m.memList {
-			go func() {
-				err := m.pingMember(mem)
+		for mem, alive := range m.memList {
+			if !alive {
+				continue
+			}
+
+			go func(ip string) {
+				err := m.pingMember(ip)
 				if err != nil {
 					//log.Printf("pingMember %v: rpc.DialHTTP failed\n", mem)
-					m.memList[mem] = false
-					m.deleteRPCClient(mem)
-					m.removeNode(mem)
+					m.memListMutex.Lock()
+					m.memList[ip] = false
+					m.memListMutex.Unlock()
+					m.deleteRPCClient(ip)
+					m.removeNode(ip)
 				}
-			}()
+			}(mem)
 		}
 	}
 }
@@ -374,7 +381,7 @@ func main() {
 
 	log.SetOutput(f)
 
-	go m.KeepPingMemberList()
+	go m.keepPingMemberList()
 
 	// init the rpc server
 	rpc.Register(m)
