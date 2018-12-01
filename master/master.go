@@ -207,13 +207,22 @@ func (m *Master) addRPCClientForNode(ip string) []string {
 
 // RPCSubmitStream RPC submit stream
 func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error {
+	log.Printf("RPCSubmitStream, submitting stream: %v", builder.ID)
+
+	for name, builder := range builder.Spout {
+		log.Printf("RPCSubmitStream, spout: %v, parallel: %v", name, builder.Parallel)
+	}
+
+	for name, builder := range builder.Bolt {
+		log.Printf("RPCSubmitStream, bolt: %v, parallel: %v", name, builder.Parallel)
+	}
+
 	if _, ok := m.streamBuilders[builder.ID]; ok {
 		return errors.New("streamID conflicts")
 	}
 
 	// TODO Get emit rule info froim builder and add to emit ruiles
 	for bolt, boltBuilder := range builder.Bolt {
-
 		for target, groupingType := range boltBuilder.Grouping {
 			if _, ok := m.emitRules[target]; !ok {
 				m.emitRules[target] = map[string]model.GroupingType{}
@@ -225,7 +234,9 @@ func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error 
 	m.streamBuilders[builder.ID] = builder
 
 	for spoutID, spoutBuilder := range m.streamBuilders[builder.ID].Spout {
+		log.Printf("RPCSubmitStream: Try to deploy spout: %v, parallel: %v", spoutID, spoutBuilder.Parallel)
 		parallelList := m.spoutIndex.AddToIndex(spoutID, spoutBuilder.Parallel)
+		log.Printf("RPCSubmitStream: parallelList: %v", parallelList)
 		// workers[spout] = parallelList
 		for _, worker := range parallelList {
 			m.askWorkerPrepareSpout(worker, spoutBuilder.Spout)
@@ -233,7 +244,9 @@ func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error 
 	}
 
 	for boltID, boltBuilder := range builder.Bolt {
+		log.Printf("Try to deploy Bolt: %v", boltID)
 		parallelList := m.boltIndex.AddToIndex(boltID, boltBuilder.Parallel)
+		log.Printf("RPCSubmitStream: parallelList: %v, parallel: %v", parallelList, boltBuilder.Parallel)
 		// workers[builder.ID] = parallelList
 		for _, worker := range parallelList {
 			m.askWorkerPrepareBolt(worker, boltBuilder.Bolt)
