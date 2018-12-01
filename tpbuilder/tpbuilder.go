@@ -53,6 +53,16 @@ func (t *TpBuilder) SetBolt(id string, bt bolt.Bolt, parallel int) bolt.Builder 
 
 func (t *TpBuilder) callSubmitRPC(client *rpc.Client, streamID string) error {
 	t.builder.ID = streamID
+	log.Printf("callSubmitRPC, submitting stream: %v", t.builder.ID)
+
+	for name, builder := range t.builder.Spout {
+		log.Printf("callSubmitRPC, spout: %v, parallel: %v", name, builder.Parallel)
+	}
+
+	for name, builder := range t.builder.Bolt {
+		log.Printf("callSubmitRPC, bolt: %v, parallel: %v", name, builder.Parallel)
+	}
+
 	err := client.Call("Master.RPCSubmitStream", &t.builder, nil)
 	if err != nil {
 		return err

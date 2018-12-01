@@ -204,13 +204,22 @@ func (m *Master) addRPCClientForNode(ip string) []string {
 
 // RPCSubmitStream RPC submit stream
 func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error {
+	log.Printf("RPCSubmitStream, submitting stream: %v", builder.ID)
+
+	for name, builder := range builder.Spout {
+		log.Printf("RPCSubmitStream, spout: %v, parallel: %v", name, builder.Parallel)
+	}
+
+	for name, builder := range builder.Bolt {
+		log.Printf("RPCSubmitStream, bolt: %v, parallel: %v", name, builder.Parallel)
+	}
+
 	if _, ok := m.streamBuilders[builder.ID]; ok {
 		return errors.New("streamID conflicts")
 	}
 
 	// TODO Get emit rule info froim builder and add to emit ruiles
 	for bolt, boltBuilder := range builder.Bolt {
-
 		for target, groupingType := range boltBuilder.Grouping {
 			if _, ok := m.emitRules[target]; !ok {
 				m.emitRules[target] = map[string]model.GroupingType{}
