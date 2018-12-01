@@ -1,13 +1,13 @@
 package bolt
 
 import (
-	"CS425/CS425-MP4/collector"
 	"CS425/CS425-MP4/model"
 )
 
 // Bolt bolt
-type Bolt interface {
-	Execute(tuple model.BoltTuple, collector collector.OutputCollector)
+type Bolt struct {
+	ID      string
+	Execute model.CMD
 }
 
 // Builder bolt struct
@@ -21,10 +21,4 @@ type Builder struct {
 // ShuffleGrouping shuffle grouping
 func (b Builder) ShuffleGrouping(id string) {
 	b.Grouping[id] = model.ShuffleGroupingType
-}
-
-// RPCBolt rpc bolt
-type RPCBolt struct {
-	ID   string
-	Bolt Bolt
 }

@@ -6,6 +6,7 @@ import (
 	"CS425/CS425-MP4/model"
 	"CS425/CS425-MP4/spout"
 
+	"bufio"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -16,6 +17,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"os/exec"
 	"time"
 )
 
@@ -61,6 +63,20 @@ func (w *Worker) getMasterPort() int {
 	return w.config.MasterPort
 }
 
+func (w *Worker) executeCMD(name string, args []string, collector outputCollector.OutputCollector) {
+	cmd := exec.Command(name, args...)
+	cmdReader, _ := cmd.StdoutPipe()
+	scanner := bufio.NewScanner(cmdReader)
+	go func() {
+		for scanner.Scan() {
+			fmt.Printf(scanner.Text())
+			collector.Emit([]string{scanner.Text()})
+		}
+	}()
+	cmd.Start()
+	cmd.Wait()
+}
+
 func (w *Worker) joinGroup() error {
 	log.Printf("master_id: %s", w.getMasterIP())
 	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", w.getMasterIP(), w.getMasterPort()))
@@ -94,29 +110,31 @@ func (w *Worker) RPCMasterPing(ip string, reply *bool) error {
 }
 
 // RPCPrepareSpout rpc prepare spout
-func (w *Worker) RPCPrepareSpout(spout spout.RPCSpout, reply *string) error {
-	collector := outputCollector.NewOutputCollector(spout.ID, "", model.SpoutEmitType, w.client)
-	go spout.Spout.Activate(collector)
+func (w *Worker) RPCPrepareSpout(theSpout spout.Spout, reply *string) error {
+	collector := outputCollector.NewOutputCollector(theSpout.ID, "", model.SpoutEmitType, w.client)
+	//go spout.Spout.Activate(collector)
+	go w.executeCMD(theSpout.Activate.Name, theSpout.Activate.Args, collector)
 	return nil
 }
 
 // RPCPrepareBolt rpc prepare bolt
-func (w *Worker) RPCPrepareBolt(bolt bolt.RPCBolt, reply *string) error {
+func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 
-	if _, ok := w.boltChannels[bolt.ID]; !ok {
+	if _, ok := w.boltChannels[theBolt.ID]; !ok {
 		return errors.New("bolt id conflicts")
 	}
 
-	w.boltChannels[bolt.ID] = make(chan model.BoltTuple)
-	w.boltStopChannels[bolt.ID] = make(chan bool)
+	w.boltChannels[theBolt.ID] = make(chan model.BoltTuple)
+	w.boltStopChannels[theBolt.ID] = make(chan bool)
 
 	go func() {
 		for {
 			select {
-			case task := <-w.boltChannels[bolt.ID]:
-				collector := outputCollector.NewOutputCollector(bolt.ID, task.UUID, model.BoltEmitType, w.client)
-				bolt.Bolt.Execute(task, collector)
-			case <-w.boltStopChannels[bolt.ID]:
+			case task := <-w.boltChannels[theBolt.ID]:
+				collector := outputCollector.NewOutputCollector(theBolt.ID, task.UUID, model.BoltEmitType, w.client)
+				// bolt.Bolt.Execute(task, collector)
+				go w.executeCMD(theBolt.Execute.Name, append(theBolt.Execute.Args, task.Tuple), collector)
+			case <-w.boltStopChannels[theBolt.ID]:
 				break
 			}
 		}

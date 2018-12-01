@@ -200,7 +200,6 @@ func (m *Master) addRPCClientForNode(ip string) []string {
 
 // RPCSubmitStream RPC submit stream
 func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error {
-	log.Printf("In RPCSubmit")
 	if _, ok := m.streamBuilders[builder.ID]; ok {
 		return errors.New("streamID conflicts")
 	}

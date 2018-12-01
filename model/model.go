@@ -105,7 +105,14 @@ type PullInstruction struct {
 	PullFrom []string // IDs with file
 }
 
+// RemoveNodeReturn remove node return
 type RemoveNodeReturn struct {
 	IP string
 	ID string
+}
+
+// CMD cmd
+type CMD struct {
+	Name string
+	Args []string
 }

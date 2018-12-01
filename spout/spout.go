@@ -1,23 +1,17 @@
 package spout
 
 import (
-	"CS425/CS425-MP4/collector"
+	"CS425/CS425-MP4/model"
 )
 
 // Spout spout
-type Spout interface {
-	Activate(collector collector.OutputCollector)
-	Deactive()
+type Spout struct {
+	ID       string
+	Activate model.CMD
 }
 
 // Builder spout builder
 type Builder struct {
 	Spout    Spout
 	Parallel int
-}
-
-// RPCSpout rpc spout
-type RPCSpout struct {
-	ID    string
-	Spout Spout
 }

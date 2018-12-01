@@ -1,8 +1,10 @@
 package main
 
 import (
+	"CS425/CS425-MP4/bolt"
 	"CS425/CS425-MP4/collector"
 	"CS425/CS425-MP4/model"
+	"CS425/CS425-MP4/spout"
 	"CS425/CS425-MP4/tpbuilder"
 	"encoding/json"
 	"io/ioutil"
@@ -57,13 +59,15 @@ func main() {
 		log.Printf("Unmarshal jsonFile fail: %v\n", e)
 	}
 
-	spout := RandomeSentenceSpout{}
-	splitBolt := SplitSentenceBolt{}
+	//spout := RandomeSentenceSpout{}
+	//splitBolt := SplitSentenceBolt{}
 
+	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "./myspout.bin", Args: []string{"-f", "xxx.txt"}}}
 	builder := tpbuilder.NewTpBuilder(craneConfig.MasterIP, craneConfig.MasterPort)
-	builder.SetSpout("spout", spout, 5)
+	builder.SetSpout("spout", mySpout, 5)
 
-	splitBt := builder.SetBolt("split", splitBolt, 8)
+	myBolt := bolt.Bolt{ID: "split", Execute: model.CMD{Name: "./mybolt.bin"}}
+	splitBt := builder.SetBolt("split", myBolt, 8)
 	splitBt.ShuffleGrouping("spout")
 
 	e = builder.Submit("word-count")
