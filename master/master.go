@@ -39,8 +39,6 @@ type Master struct {
 	emitRules            map[string]map[string]model.GroupingType
 	spoutIndex           index.Index
 	boltIndex            index.Index
-	// workerIndex
-	workers index.Index
 }
 
 // NewMaster init a master
@@ -70,7 +68,6 @@ func (m *Master) init(masterConfig []byte) {
 	m.emitRules = map[string]map[string]model.GroupingType{}
 	m.spoutIndex = index.NewIndex()
 	m.boltIndex = index.NewIndex()
-	m.workers = index.NewIndex()
 }
 
 func (m *Master) getLogPath() string {
@@ -150,7 +147,6 @@ func (m *Master) RPCJoinGroup(ip string, reply *bool) error {
 	m.addRPCClient(ip, client)
 	m.spoutIndex.AddNewNode(ip)
 	m.boltIndex.AddNewNode(ip)
-	m.workers.AddNewNode(ip)
 	return nil
 }
 
@@ -237,7 +233,6 @@ func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error 
 		log.Printf("RPCSubmitStream: Try to deploy spout: %v, parallel: %v", spoutID, spoutBuilder.Parallel)
 		parallelList := m.spoutIndex.AddToIndex(spoutID, spoutBuilder.Parallel)
 		log.Printf("RPCSubmitStream: parallelList: %v", parallelList)
-		// workers[spout] = parallelList
 		for _, worker := range parallelList {
 			m.askWorkerPrepareSpout(worker, spoutBuilder.Spout)
 		}
@@ -247,7 +242,6 @@ func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error 
 		log.Printf("Try to deploy Bolt: %v", boltID)
 		parallelList := m.boltIndex.AddToIndex(boltID, boltBuilder.Parallel)
 		log.Printf("RPCSubmitStream: parallelList: %v, parallel: %v", parallelList, boltBuilder.Parallel)
-		// workers[builder.ID] = parallelList
 		for _, worker := range parallelList {
 			m.askWorkerPrepareBolt(worker, boltBuilder.Bolt)
 		}
