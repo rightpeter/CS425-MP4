@@ -165,7 +165,13 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 				collector := outputCollector.NewOutputCollector(theBolt.ID, task.UUID, model.BoltEmitType, w.client)
 				// bolt.Bolt.Execute(task, collector)
 				go func() {
-					err = w.executeCMD(theBolt.Execute.Name, append(theBolt.Execute.Args, task.Tuple.Content), collector)
+					var args []string
+					if len(theBolt.Execute.Args) == 0 {
+						args = []string{task.Tuple.Content}
+					} else {
+						args = append(theBolt.Execute.Args, task.Tuple.Content)
+					}
+					err = w.executeCMD(theBolt.Execute.Name, args, collector)
 					if err != nil {
 						log.Printf("RPCPrepareBolt: executeCMD failed: %v", err)
 					}

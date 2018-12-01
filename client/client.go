@@ -29,7 +29,7 @@ func main() {
 	builder := tpbuilder.NewTpBuilder(craneConfig.MasterIP, craneConfig.MasterPort)
 	builder.SetSpout("spout", mySpout, 5)
 
-	myBolt := bolt.Bolt{ID: "split", Execute: model.CMD{Name: "myBolt"}}
+	myBolt := bolt.Bolt{ID: "split", Execute: model.CMD{Name: "myBolt", Args: []string{}}}
 	splitBt := builder.SetBolt("split", myBolt, 8)
 	splitBt.ShuffleGrouping("spout")
 
