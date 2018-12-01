@@ -63,9 +63,13 @@ func (w *Worker) getMasterPort() int {
 	return w.config.MasterPort
 }
 
-func (w *Worker) executeCMD(name string, args []string, collector outputCollector.OutputCollector) {
+func (w *Worker) executeCMD(name string, args []string, collector outputCollector.OutputCollector) error {
 	cmd := exec.Command(name, args...)
-	cmdReader, _ := cmd.StdoutPipe()
+	cmdReader, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+
 	scanner := bufio.NewScanner(cmdReader)
 	go func() {
 		for scanner.Scan() {
@@ -73,8 +77,16 @@ func (w *Worker) executeCMD(name string, args []string, collector outputCollecto
 			collector.Emit([]string{scanner.Text()})
 		}
 	}()
-	cmd.Start()
-	cmd.Wait()
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w *Worker) joinGroup() error {
@@ -111,10 +123,20 @@ func (w *Worker) RPCMasterPing(ip string, reply *bool) error {
 
 // RPCPrepareSpout rpc prepare spout
 func (w *Worker) RPCPrepareSpout(theSpout spout.Spout, reply *string) error {
+	var err error
 	log.Printf("RPCPrepareSpout: %v", theSpout.ID)
 	collector := outputCollector.NewOutputCollector(theSpout.ID, "", model.SpoutEmitType, w.client)
 	//go spout.Spout.Activate(collector)
-	go w.executeCMD(theSpout.Activate.Name, theSpout.Activate.Args, collector)
+	go func() {
+		err = w.executeCMD(theSpout.Activate.Name, theSpout.Activate.Args, collector)
+		if err != nil {
+			log.Printf("RPCPrepareSpout: executeCMD error: %v", err)
+		}
+	}()
+
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
