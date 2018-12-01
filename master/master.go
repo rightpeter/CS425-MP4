@@ -68,6 +68,9 @@ func (m *Master) init(masterConfig []byte) {
 		m.memList[mem] = false
 	}
 	m.emitRules = map[string]map[string]model.GroupingType{}
+	m.spoutIndex = index.NewIndex()
+	m.boltIndex = index.NewIndex()
+	m.workers = index.NewIndex()
 }
 
 func (m *Master) getLogPath() string {
