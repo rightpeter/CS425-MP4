@@ -53,7 +53,7 @@ func (t *TpBuilder) SetBolt(id string, bt bolt.Bolt, parallel int) bolt.Builder 
 
 func (t *TpBuilder) callSubmitRPC(client *rpc.Client, streamID string) error {
 	t.builder.ID = streamID
-	err := client.Call("Crane.RPCSubmitStream", &t.builder, nil)
+	err := client.Call("Master.RPCSubmitStream", &t.builder, nil)
 	if err != nil {
 		return err
 	}

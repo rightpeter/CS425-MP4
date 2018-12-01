@@ -59,6 +59,7 @@ func (m *Master) init(masterConfig []byte) {
 	json.Unmarshal(masterConfig, &m.config)
 	m.taskMapMutex = &sync.Mutex{}
 	m.taskMap = map[string]model.CraneTask{}
+	m.streamBuilders = map[string]*tpbuilder.Builder{}
 	m.nodesRPCClientsMutex = &sync.Mutex{}
 	m.nodesRPCClients = map[string]*rpc.Client{}
 	m.memListMutex = &sync.Mutex{}
