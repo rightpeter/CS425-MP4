@@ -32,7 +32,7 @@ type Master struct {
 	memListMutex         *sync.Mutex
 	memList              map[string]bool
 	taskMapMutex         *sync.Mutex
-	taskMap              map[string]model.CraneTask
+	taskMap              map[string]*model.CraneTask
 	streamBuilders       map[string]*tpbuilder.Builder
 	spoutBuilders        map[string]spout.Builder
 	boltBuilders         map[string]bolt.Builder
@@ -56,7 +56,7 @@ func (m *Master) loadConfigFromJSON(jsonFile []byte) error {
 func (m *Master) init(masterConfig []byte) {
 	json.Unmarshal(masterConfig, &m.config)
 	m.taskMapMutex = &sync.Mutex{}
-	m.taskMap = map[string]model.CraneTask{}
+	m.taskMap = map[string]*model.CraneTask{}
 	m.streamBuilders = map[string]*tpbuilder.Builder{}
 	m.nodesRPCClientsMutex = &sync.Mutex{}
 	m.nodesRPCClients = map[string]*rpc.Client{}
@@ -345,7 +345,7 @@ func (m *Master) dealWithEmit(emit model.TaskEmit) error {
 		uuid := uuidObject.String()
 
 		m.taskMapMutex.Lock()
-		m.taskMap[uuid] = model.CraneTask{
+		m.taskMap[uuid] = &model.CraneTask{
 			Tuple: model.Tuple{
 				ID:       emit.ID,
 				EmitType: emit.EmitType,
@@ -383,12 +383,9 @@ func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
 			return errors.New("task has been finished")
 		}
 
-		tmpTask := m.taskMap[emit.UUID]
-		tmpTask.Finished = true
-		tmpTask.Succeed = true
-
 		m.taskMapMutex.Lock()
-		m.taskMap[emit.UUID] = tmpTask
+		m.taskMap[emit.UUID].Finished = true
+		m.taskMap[emit.UUID].Succeed = true
 		m.taskMapMutex.Unlock()
 	}
 
