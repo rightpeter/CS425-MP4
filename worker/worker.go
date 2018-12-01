@@ -147,6 +147,7 @@ func main() {
 	log.SetOutput(f)
 
 	for {
+		time.Sleep(1 * time.Second)
 		err = w.joinGroup()
 		if err != nil {
 			log.Printf("join group failed, retry 5 sec later: %s", err)
