@@ -146,6 +146,7 @@ func (w *Worker) RPCPrepareSpout(theSpout spout.Spout, reply *string) error {
 
 // RPCPrepareBolt rpc prepare bolt
 func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
+	var err error
 	log.Printf("RPCPrepareBolt: %v", theBolt.ID)
 
 	if _, ok := w.boltChannels[theBolt.ID]; ok {
@@ -163,13 +164,20 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 				log.Printf("bolt %v received task %v", theBolt.ID, task.UUID)
 				collector := outputCollector.NewOutputCollector(theBolt.ID, task.UUID, model.BoltEmitType, w.client)
 				// bolt.Bolt.Execute(task, collector)
-				go w.executeCMD(theBolt.Execute.Name, append(theBolt.Execute.Args, task.Tuple.Content), collector)
+				go func() {
+					err = w.executeCMD(theBolt.Execute.Name, append(theBolt.Execute.Args, task.Tuple.Content), collector)
+					if err != nil {
+						log.Printf("RPCPrepareBolt: executeCMD failed: %v", err)
+					}
+				}()
 			case <-w.boltStopChannels[theBolt.ID]:
 				break
 			}
 		}
 	}()
-
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
