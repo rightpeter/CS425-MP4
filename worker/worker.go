@@ -87,8 +87,9 @@ func (w *Worker) executeSpout(name string, args []string, collector outputCollec
 	}
 
 	for {
-
+		time.Sleep(500 * time.Millisecond)
 	}
+
 }
 
 func (w *Worker) executeCMD(name string, args []string) ([]string, error) {
