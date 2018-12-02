@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 )
 
 func main() {
@@ -28,10 +27,5 @@ func main() {
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
-	}
-
-	for {
-		time.Sleep(500 * time.Millisecond)
-		fmt.Println("#")
 	}
 }

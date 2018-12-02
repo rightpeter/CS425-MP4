@@ -90,12 +90,15 @@ func (w *Worker) executeSpout(name string, args []string, collector outputCollec
 		return err
 	}
 
-	err = cmd.Wait()
-	if err != nil {
-		return err
-	}
+	for {
 
-	return nil
+	}
+	//err = cmd.Wait()
+	//if err != nil {
+	//return err
+	//}
+
+	//return nil
 }
 
 func (w *Worker) executeCMD(name string, args []string) ([]string, error) {
