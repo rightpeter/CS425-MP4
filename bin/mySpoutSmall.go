@@ -17,7 +17,7 @@ func main() {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
 		fmt.Println(scanner.Text())
 	}
 
