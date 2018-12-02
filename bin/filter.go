@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const threasHold = 10
+const threasHold = 15
 
 func main() {
 	args := os.Args
