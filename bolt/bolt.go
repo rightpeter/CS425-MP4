@@ -8,6 +8,7 @@ import (
 type Bolt struct {
 	ID      string
 	Execute model.CMD
+	Finish  model.CMD
 }
 
 // Builder bolt struct

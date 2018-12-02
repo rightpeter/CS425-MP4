@@ -63,36 +63,31 @@ func (w *Worker) getMasterPort() int {
 	return w.config.MasterPort
 }
 
-func (w *Worker) executeCMD(name string, args []string, collector outputCollector.OutputCollector) error {
+func (w *Worker) executeCMD(name string, args []string) ([]string, error) {
 	cmd := exec.Command("./bin/"+name, args...)
 	cmdReader, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	scanner := bufio.NewScanner(cmdReader)
 	emitList := []string{}
 	go func() {
 		for scanner.Scan() {
-			log.Printf("executeCMD: emit tuple %vf", scanner.Text())
+			log.Printf("executeCMD: emit tuple %v", scanner.Text())
 			emitList = append(emitList, scanner.Text())
 		}
 	}()
 	err = cmd.Start()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = cmd.Wait()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = collector.Emit(emitList)
-	if err != nil {
-		log.Printf("executeCMD: collector.Emit fail: %v", err)
-	}
-
-	return nil
+	return emitList, nil
 }
 
 func (w *Worker) joinGroup() error {
@@ -135,9 +130,14 @@ func (w *Worker) RPCPrepareSpout(theSpout spout.Spout, reply *string) error {
 	collector := outputCollector.NewOutputCollector(theSpout.ID, "", model.SpoutEmitType, w.client)
 	//go spout.Spout.Activate(collector)
 	go func() {
-		err = w.executeCMD(theSpout.Activate.Name, theSpout.Activate.Args, collector)
+		emitList, err := w.executeCMD(theSpout.Activate.Name, theSpout.Activate.Args)
 		if err != nil {
 			log.Printf("RPCPrepareSpout: executeCMD error: %v", err)
+		}
+
+		err = collector.Emit(emitList)
+		if err != nil {
+			log.Printf("executeCMD: collector.Emit fail: %v", err)
 		}
 	}()
 
@@ -174,9 +174,23 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 					} else {
 						args = append(theBolt.Execute.Args, task.Tuple.Content)
 					}
-					err = w.executeCMD(theBolt.Execute.Name, args, collector)
+					emitList, err := w.executeCMD(theBolt.Execute.Name, args)
 					if err != nil {
 						log.Printf("RPCPrepareBolt: executeCMD failed: %v", err)
+					}
+
+					err = collector.Emit(emitList)
+					if err != nil {
+						log.Printf("executeCMD: collector.Emit fail: %v", err)
+					}
+
+					if len(theBolt.Finish.Args) == 0 {
+						args = emitList
+					} else {
+						args = append(theBolt.Finish.Args, emitList...)
+					}
+					if theBolt.Finish.Name != "" {
+						w.executeCMD(theBolt.Finish.Name, args)
 					}
 				}()
 			case <-w.boltStopChannels[theBolt.ID]:

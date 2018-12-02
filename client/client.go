@@ -29,11 +29,15 @@ func main() {
 	builder := tpbuilder.NewTpBuilder(craneConfig.MasterIP, craneConfig.MasterPort)
 	builder.SetSpout("spout", mySpout, 5)
 
-	myBolt := bolt.Bolt{ID: "split", Execute: model.CMD{Name: "myBolt", Args: []string{}}}
-	splitBt := builder.SetBolt("split", myBolt, 8)
-	splitBt.ShuffleGrouping("spout")
+	filterBolt := bolt.Bolt{ID: "filter", Execute: model.CMD{Name: "filter", Args: []string{}}}
+	filterBt := builder.SetBolt("filter", filterBolt, 8)
+	filterBt.ShuffleGrouping("spout")
 
-	e = builder.Submit("word-count")
+	uppercaseBolt := bolt.Bolt{ID: "uppercase", Execute: model.CMD{Name: "uppercase", Args: []string{}}, Finish: model.CMD{Name: "finish", Args: []string{}}}
+	uppercaseBt := builder.SetBolt("uppercase", uppercaseBolt, 8)
+	uppercaseBt.ShuffleGrouping("filter")
+
+	e = builder.Submit("uppercase-stream")
 	if e != nil {
 		log.Printf("Submit Stream Failed: %v", e)
 	}

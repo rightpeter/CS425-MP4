@@ -6,15 +6,17 @@ import (
 	"strings"
 )
 
+const threasHold = 6
+
 func main() {
 	args := os.Args
-	if len(args) > 1 {
+	if len(args) == 2 {
 		words := strings.Fields(args[1])
-		for _, word := range words {
-			fmt.Println(word)
+		if len(words) > threasHold {
+			fmt.Println(args[1])
 		}
 	} else {
-		fmt.Println("No input")
+		fmt.Println("Wrong input")
 	}
 
 }
