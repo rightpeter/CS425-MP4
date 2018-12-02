@@ -86,7 +86,7 @@ func (w *Worker) executeSpout(name string, args []string, collector outputCollec
 		return err
 	}
 
-	//time.Sleep(500 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	err = cmd.Wait()
 	if err != nil {
@@ -117,7 +117,7 @@ func (w *Worker) executeCMD(name string, args []string) ([]string, error) {
 		return nil, err
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	//time.Sleep(500 * time.Millisecond)
 
 	err = cmd.Wait()
 	if err != nil {
