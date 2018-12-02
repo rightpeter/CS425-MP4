@@ -82,12 +82,13 @@ func (w *Worker) executeCMD(name string, args []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	time.Sleep(500 * time.Millisecond)
+
 	err = cmd.Wait()
 	if err != nil {
 		return nil, err
 	}
-
-	time.Sleep(500 * time.Millisecond)
 
 	return emitList, nil
 }
