@@ -63,6 +63,39 @@ func (w *Worker) getMasterPort() int {
 	return w.config.MasterPort
 }
 
+func (w *Worker) executeSpout(name string, args []string, collector outputCollector.OutputCollector) error {
+	log.Printf("executeCMD: name: %v, args: %v", name, args)
+	cmd := exec.Command("./bin/"+name, args...)
+	cmdReader, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(cmdReader)
+	go func() {
+		for scanner.Scan() {
+			log.Printf("executeCMD: emit tuple %v", scanner.Text())
+			err = collector.Emit([]string{scanner.Text()})
+			if err != nil {
+				log.Printf("executeCMD: collector.Emit fail: %v", err)
+			}
+		}
+	}()
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(500 * time.Millisecond)
+
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (w *Worker) executeCMD(name string, args []string) ([]string, error) {
 	log.Printf("executeCMD: name: %v, args: %v", name, args)
 	cmd := exec.Command("./bin/"+name, args...)
