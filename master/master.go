@@ -39,6 +39,7 @@ type Master struct {
 	emitRules            map[string]map[string]model.GroupingType
 	spoutIndex           index.Index
 	boltIndex            index.Index
+	submit               time.Time
 }
 
 // NewMaster init a master
@@ -213,7 +214,7 @@ func (m *Master) addRPCClientForNode(ip string) []string {
 
 // RPCSubmitStream RPC submit stream
 func (m *Master) RPCSubmitStream(builder *tpbuilder.Builder, reply *bool) error {
-	fmt.Printf("Submit: %v", time.Now())
+	m.submit = time.Now()
 	log.Printf("RPCSubmitStream, submitting stream: %v", builder.ID)
 
 	for name, builder := range builder.Spout {
@@ -408,9 +409,7 @@ func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
 		return err
 	}
 
-	if len(m.taskMap) == 0 {
-		fmt.Printf("len(taskMap) == 0: %v", time.Now())
-	}
+	fmt.Println(time.Since(m.submit))
 	return nil
 }
 

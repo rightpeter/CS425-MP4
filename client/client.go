@@ -22,10 +22,7 @@ func main() {
 		log.Printf("Unmarshal jsonFile fail: %v\n", e)
 	}
 
-	//spout := RandomeSentenceSpout{}
-	//splitBolt := SplitSentenceBolt{}
-
-	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "mySpout", Args: []string{"/tmp/large.txt"}}}
+	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "mySpout", Args: []string{"/tmp/small.txt"}}}
 	builder := tpbuilder.NewTpBuilder(craneConfig.MasterIP, craneConfig.MasterPort)
 	builder.SetSpout("spout", mySpout, 1)
 
@@ -33,9 +30,13 @@ func main() {
 	filterBt := builder.SetBolt("filter", filterBolt, 8)
 	filterBt.ShuffleGrouping("spout")
 
-	uppercaseBolt := bolt.Bolt{ID: "uppercase", Execute: model.CMD{Name: "uppercase", Args: []string{}}, Finish: model.CMD{Name: "finish", Args: []string{}}}
-	uppercaseBt := builder.SetBolt("uppercase", uppercaseBolt, 8)
-	uppercaseBt.ShuffleGrouping("filter")
+	//uppercaseBolt := bolt.Bolt{ID: "uppercase", Execute: model.CMD{Name: "uppercase", Args: []string{}}, Finish: model.CMD{Name: "finish", Args: []string{}}}
+	//uppercaseBt := builder.SetBolt("uppercase", uppercaseBolt, 8)
+	//uppercaseBt.ShuffleGrouping("filter")
+
+	wordCountBolt := bolt.Bolt{ID: "uppercase", Execute: model.CMD{Name: "uppercase", Args: []string{}}}
+	wordCountBt := builder.SetBolt("uppercase", wordCountBolt, 8)
+	wordCountBt.ShuffleGrouping("filter")
 
 	e = builder.Submit("uppercase-stream")
 	if e != nil {
