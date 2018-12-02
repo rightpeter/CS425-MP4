@@ -91,7 +91,7 @@ func (w *Worker) executeSpout(name string, args []string, collector outputCollec
 	}
 
 	for {
-
+		time.Sleep(500 * time.Millisecond)
 	}
 	//err = cmd.Wait()
 	//if err != nil {
