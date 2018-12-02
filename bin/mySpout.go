@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+		time.Sleep(50 * time.Millisecond)
 		fmt.Println(scanner.Text())
 	}
 
