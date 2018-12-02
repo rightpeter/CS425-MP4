@@ -33,9 +33,9 @@ func main() {
 	filterBt := builder.SetBolt("filter", filterBolt, 8)
 	filterBt.ShuffleGrouping("spout")
 
-	//uppercaseBolt := bolt.Bolt{ID: "uppercase", Execute: model.CMD{Name: "uppercase", Args: []string{}}, Finish: model.CMD{Name: "finish", Args: []string{}}}
-	//uppercaseBt := builder.SetBolt("uppercase", uppercaseBolt, 8)
-	//uppercaseBt.ShuffleGrouping("filter")
+	uppercaseBolt := bolt.Bolt{ID: "uppercase", Execute: model.CMD{Name: "uppercase", Args: []string{}}, Finish: model.CMD{Name: "finish", Args: []string{}}}
+	uppercaseBt := builder.SetBolt("uppercase", uppercaseBolt, 8)
+	uppercaseBt.ShuffleGrouping("filter")
 
 	e = builder.Submit("uppercase-stream")
 	if e != nil {
