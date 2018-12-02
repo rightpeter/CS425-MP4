@@ -7,6 +7,7 @@ import (
 	"CS425/CS425-MP4/spout"
 
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"net/rpc"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -104,29 +106,23 @@ func (w *Worker) executeSpout(name string, args []string, collector outputCollec
 func (w *Worker) executeCMD(name string, args []string) ([]string, error) {
 	log.Printf("executeCMD: name: %v, args: %v", name, args)
 	cmd := exec.Command("./bin/"+name, args...)
-	cmdReader, err := cmd.StdoutPipe()
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 
-	scanner := bufio.NewScanner(cmdReader)
 	emitList := []string{}
-	go func() {
-		for scanner.Scan() {
-			log.Printf("executeCMD: emit tuple %v", scanner.Text())
-			emitList = append(emitList, scanner.Text())
+	for {
+		line, err := out.ReadBytes('\n')
+		if err != nil {
+			break
 		}
-	}()
-	err = cmd.Start()
-	if err != nil {
-		return nil, err
-	}
-
-	//time.Sleep(500 * time.Millisecond)
-
-	err = cmd.Wait()
-	if err != nil {
-		return nil, err
+		text := strings.TrimSuffix(string(line), "\n")
+		log.Printf("executeCMD: emit tuple %v", text)
+		emitList = append(emitList, text)
 	}
 
 	return emitList, nil
