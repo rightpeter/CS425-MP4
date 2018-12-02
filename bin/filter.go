@@ -15,7 +15,7 @@ func main() {
 		//if len(words) > threasHold {
 		//fmt.Println(args[1])
 		//}
-		if len(words) > 15 {
+		if len(words) > 10 {
 			fmt.Println(len(words))
 		}
 	} else {
