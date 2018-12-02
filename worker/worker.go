@@ -181,6 +181,7 @@ func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 					if err != nil {
 						log.Printf("RPCPrepareBolt: executeCMD failed: %v", err)
 					}
+					log.Printf("RPCPrepareBolt: emitList for bolt %v: %v", theBolt.ID, emitList)
 
 					err = collector.Emit(emitList)
 					if err != nil {
