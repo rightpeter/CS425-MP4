@@ -25,7 +25,7 @@ func main() {
 	//spout := RandomeSentenceSpout{}
 	//splitBolt := SplitSentenceBolt{}
 
-	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "mySpout", Args: []string{"/tmp/medium.txt"}}}
+	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "mySpout", Args: []string{"/tmp/large.txt"}}}
 	builder := tpbuilder.NewTpBuilder(craneConfig.MasterIP, craneConfig.MasterPort)
 	builder.SetSpout("spout", mySpout, 1)
 
