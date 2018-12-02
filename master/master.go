@@ -316,6 +316,7 @@ func (m *Master) getWorkerForTask(boltID string, rule model.GroupingType) ([]str
 		return nil, fmt.Errorf("no worker for bolt %v", boltID)
 	}
 
+	log.Printf("getWorker: potentialWorkers: %v", potentialWorkers)
 	r := rand.Intn(len(potentialWorkers))
 	return []string{potentialWorkers[r]}, nil
 }
