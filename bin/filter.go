@@ -12,9 +12,10 @@ func main() {
 	args := os.Args
 	if len(args) == 2 {
 		words := strings.Fields(args[1])
-		if len(words) > threasHold {
-			fmt.Println(args[1])
-		}
+		//if len(words) > threasHold {
+		//fmt.Println(args[1])
+		//}
+		fmt.Println(len(words))
 	} else {
 		fmt.Println("Wrong input")
 	}
