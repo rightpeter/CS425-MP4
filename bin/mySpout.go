@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 	}
 
 	for {
+		time.Sleep(500 * time.Millisecond)
 		fmt.Println("#")
 	}
 }
