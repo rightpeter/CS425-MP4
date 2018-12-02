@@ -167,14 +167,9 @@ func (w *Worker) RPCPrepareSpout(theSpout spout.Spout, reply *string) error {
 	collector := outputCollector.NewOutputCollector(theSpout.ID, "", model.SpoutEmitType, w.client)
 	//go spout.Spout.Activate(collector)
 	go func() {
-		emitList, err := w.executeCMD(theSpout.Activate.Name, theSpout.Activate.Args)
+		err := w.executeSpout(theSpout.Activate.Name, theSpout.Activate.Args, collector)
 		if err != nil {
 			log.Printf("RPCPrepareSpout: executeCMD error: %v", err)
-		}
-
-		err = collector.Emit(emitList)
-		if err != nil {
-			log.Printf("executeCMD: collector.Emit fail: %v", err)
 		}
 	}()
 
