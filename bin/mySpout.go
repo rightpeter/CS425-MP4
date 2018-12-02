@@ -30,6 +30,6 @@ func main() {
 	}
 
 	for {
-
+		fmt.Println("#")
 	}
 }

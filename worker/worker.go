@@ -74,6 +74,10 @@ func (w *Worker) executeSpout(name string, args []string, collector outputCollec
 	scanner := bufio.NewScanner(cmdReader)
 	go func() {
 		for scanner.Scan() {
+			if scanner.Text() == "#" {
+				continue
+			}
+
 			log.Printf("executeCMD: emit tuple %v", scanner.Text())
 			err = collector.Emit([]string{scanner.Text()})
 			if err != nil {
