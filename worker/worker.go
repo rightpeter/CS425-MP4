@@ -87,7 +87,7 @@ func (w *Worker) executeCMD(name string, args []string) ([]string, error) {
 		return nil, err
 	}
 
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	return emitList, nil
 }
