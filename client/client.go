@@ -27,7 +27,7 @@ func main() {
 
 	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "mySpoutMedium"}}
 	builder := tpbuilder.NewTpBuilder(craneConfig.MasterIP, craneConfig.MasterPort)
-	builder.SetSpout("spout", mySpout, 5)
+	builder.SetSpout("spout", mySpout, 1)
 
 	filterBolt := bolt.Bolt{ID: "filter", Execute: model.CMD{Name: "filter", Args: []string{}}}
 	filterBt := builder.SetBolt("filter", filterBolt, 8)
