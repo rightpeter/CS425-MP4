@@ -164,6 +164,7 @@ func (w *Worker) RPCMasterPing(ip string, reply *bool) error {
 // RPCPrepareSpout rpc prepare spout
 func (w *Worker) RPCPrepareSpout(theSpout spout.Spout, reply *string) error {
 	var err error
+	fmt.Printf("RPCPrepareSpout: %v\n", theSpout.ID)
 	log.Printf("RPCPrepareSpout: %v", theSpout.ID)
 	collector := outputCollector.NewOutputCollector(theSpout.ID, "", model.SpoutEmitType, w.client)
 	//go spout.Spout.Activate(collector)
@@ -183,6 +184,7 @@ func (w *Worker) RPCPrepareSpout(theSpout spout.Spout, reply *string) error {
 // RPCPrepareBolt rpc prepare bolt
 func (w *Worker) RPCPrepareBolt(theBolt bolt.Bolt, reply *string) error {
 	var err error
+	fmt.Printf("RPCPrepareBolt: %v\n", theBolt.ID)
 	log.Printf("RPCPrepareBolt: %v", theBolt.ID)
 
 	if _, ok := w.boltChannels[theBolt.ID]; ok {
