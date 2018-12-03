@@ -400,7 +400,7 @@ func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
 	}
 
 	if len(m.emitRules[emit.ID]) == 0 {
-		log.Printf("RPCEmit: emit of %v not been subscribed by anyone", emit.ID)
+		//log.Printf("RPCEmit: emit of %v not been subscribed by anyone", emit.ID)
 		return nil
 	}
 
