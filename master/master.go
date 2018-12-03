@@ -296,7 +296,7 @@ func (m *Master) askWorkerPrepareBolt(ip string, bolt bolt.Bolt) error {
 }
 
 func (m *Master) askToExecuteTask(ip string, uuid string, boltID string) error {
-	log.Printf("askToExecuteTask: ip: %v, uuid: %v, boltID: %v, content: %v", ip, uuid, boltID, m.getContentFromUUID(uuid))
+	//log.Printf("askToExecuteTask: ip: %v, uuid: %v, boltID: %v, content: %v", ip, uuid, boltID, m.getContentFromUUID(uuid))
 	client, err := m.getRPCClient(ip)
 	if err != nil {
 		return err
@@ -318,7 +318,7 @@ func (m *Master) getWorkerForTask(boltID string, rule model.GroupingType) ([]str
 		return nil, fmt.Errorf("no worker for bolt %v", boltID)
 	}
 
-	log.Printf("getWorker: potentialWorkers: %v", potentialWorkers)
+	//log.Printf("getWorker: potentialWorkers: %v", potentialWorkers)
 	r := rand.Intn(len(potentialWorkers))
 	return []string{potentialWorkers[r]}, nil
 }
@@ -336,7 +336,7 @@ func (m *Master) executeTask(uuid string) error {
 		for _, ip := range workers {
 			err = m.askToExecuteTask(ip, uuid, boltID)
 			if err != nil {
-				log.Printf("executeTask: askToExecuteTask %v fail: %v", m.getContentFromUUID(uuid), err)
+				//log.Printf("executeTask: askToExecuteTask %v fail: %v", m.getContentFromUUID(uuid), err)
 			}
 		}
 
@@ -369,7 +369,7 @@ func (m *Master) dealWithEmit(emit model.TaskEmit) error {
 		go func(uuid string) {
 			for {
 				if !m.taskMap[uuid].Finished {
-					log.Printf("dealWithEmit: Try to executeTask: %v", m.getContentFromUUID(uuid))
+					//log.Printf("dealWithEmit: Try to executeTask: %v", m.getContentFromUUID(uuid))
 					err := m.executeTask(uuid)
 					if err != nil {
 						log.Printf("dealWithEmit: execute task: %v, failed: %v", m.getContentFromUUID(uuid), err)
@@ -387,7 +387,7 @@ func (m *Master) dealWithEmit(emit model.TaskEmit) error {
 
 // RPCEmit rpc emit
 func (m *Master) RPCEmit(emit model.TaskEmit, reply *bool) error {
-	log.Printf("RPCEmit: ID: %v, EmitType: %v, Tuples: %v", emit.ID, emit.EmitType, emit.Tuples)
+	//log.Printf("RPCEmit: ID: %v, EmitType: %v, Tuples: %v", emit.ID, emit.EmitType, emit.Tuples)
 	if emit.EmitType == model.BoltEmitType {
 		if m.taskMap[emit.UUID].Finished {
 			return fmt.Errorf("task %v with %v has been finished", emit.UUID, emit.Tuples)

@@ -6,8 +6,10 @@ import (
 	"CS425/CS425-MP4/spout"
 	"CS425/CS425-MP4/tpbuilder"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"time"
 )
 
 func main() {
@@ -22,7 +24,7 @@ func main() {
 		log.Printf("Unmarshal jsonFile fail: %v\n", e)
 	}
 
-	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "mySpout", Args: []string{"/tmp/small.txt"}}}
+	mySpout := spout.Spout{ID: "spout", Activate: model.CMD{Name: "mySpout", Args: []string{"/tmp/large.txt"}}}
 	builder := tpbuilder.NewTpBuilder(craneConfig.MasterIP, craneConfig.MasterPort)
 	builder.SetSpout("spout", mySpout, 1)
 
@@ -38,7 +40,7 @@ func main() {
 	wordCountBt := builder.SetBolt("uppercase", wordCountBolt, 8)
 	wordCountBt.ShuffleGrouping("filter")
 
-	e = builder.Submit("uppercase-stream")
+	e = builder.Submit(fmt.Sprintf("uppercase-stream-%d", time.Now().Unix()))
 	if e != nil {
 		log.Printf("Submit Stream Failed: %v", e)
 	}
